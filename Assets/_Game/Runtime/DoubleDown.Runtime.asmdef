@@ -2,7 +2,9 @@
   "name": "DoubleDown.Runtime",
   "rootNamespace": "DoubleDown",
   "references": [
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
   ],
   "autoReferenced": true
 }

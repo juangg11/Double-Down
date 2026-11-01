@@ -36,7 +36,7 @@ Assets/
 docs/
 ```
 
-`DoubleDown.Runtime` y `DoubleDown.Editor` son los asmdefs iniciales. El asmdef de pruebas se añadirá junto con las pruebas de reglas en Fase 2. Los datos de contenido y guías para añadir reliquias, ediciones y jefes se documentarán cuando existan esos sistemas.
+`DoubleDown.Runtime`, `DoubleDown.Editor`, `DoubleDown.Tests.EditMode` y `DoubleDown.Tests.PlayMode` separan código de juego, construcción de escenas y pruebas. Los datos de contenido y guías para añadir reliquias, ediciones y jefes se documentarán cuando existan esos sistemas.
 
 ## Render e input
 
@@ -46,3 +46,9 @@ docs/
 - `DoubleDownInput.inputactions`: mapa `Table` con `Point`, `Select`, `Cancel`, `Confirm`; Input System como único sistema activo.
 - TextMeshPro llega mediante `com.unity.ugui` en Unity 6.
 - La animación de Fase 1 reside en `FeelCardView`: muelle amortiguado, curvas ScriptableObject y temporizadores por carta. Cada carta controla sus propias transiciones, sin dependencia de DOTween ni código de la referencia.
+
+## Núcleo de blackjack (Fase 2)
+
+`BlackjackSession` es la máquina de estados y única autoridad sobre mazo, acciones, apuestas y pagos. `BlackjackRulesConfig` es el ScriptableObject de parámetros; `BlackjackRules` copia sus valores al crear la sesión. `BlackjackDeck` usa un generador con semilla propia; la UI y los sonidos no consumen ese RNG. `BlackjackEvent` anuncia reparto, cambio de mano, revelación y cierre.
+
+`BlackjackTableController` consume el estado y los eventos, construye el HUD con TextMeshPro, activa botones según acciones legales y reutiliza `BlackjackCardVisual` para animar cartas. Las reglas no conocen sprites, Canvas ni Input System. La puntuación incremental de Fase 3 consumirá los resultados de mano sin alterar el cálculo de blackjack.

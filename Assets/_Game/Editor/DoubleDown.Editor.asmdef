@@ -3,7 +3,8 @@
   "rootNamespace": "DoubleDown",
   "references": [
     "DoubleDown.Runtime",
-    "Unity.RenderPipelines.Universal.2D.Runtime"
+    "Unity.RenderPipelines.Universal.2D.Runtime",
+    "Unity.TextMeshPro"
   ],
   "autoReferenced": true,
   "includePlatforms": [

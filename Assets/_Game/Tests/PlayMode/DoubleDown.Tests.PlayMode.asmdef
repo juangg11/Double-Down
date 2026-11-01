@@ -2,7 +2,9 @@
   "name": "DoubleDown.Tests.PlayMode",
   "rootNamespace": "DoubleDown.Tests",
   "references": [
-    "DoubleDown.Runtime"
+    "DoubleDown.Runtime",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

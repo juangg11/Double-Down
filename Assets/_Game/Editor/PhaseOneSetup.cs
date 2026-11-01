@@ -173,7 +173,7 @@ namespace DoubleDown.Editor
             return asset;
         }
 
-        private static void ConfigurePixelPerfect(GameObject cameraObject)
+        internal static void ConfigurePixelPerfect(GameObject cameraObject)
         {
             var type = AppDomain.CurrentDomain.GetAssemblies()
                 .Select(assembly => assembly.GetType("UnityEngine.Rendering.Universal.PixelPerfectCamera", false))
