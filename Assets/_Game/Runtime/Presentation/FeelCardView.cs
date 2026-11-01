@@ -5,12 +5,14 @@ namespace DoubleDown.Presentation
 {
     public sealed class FeelCardView : MonoBehaviour
     {
+        private static readonly int RecolorId = Shader.PropertyToID("_Recolor");
         private FeelProfile profile;
         private Sprite frontSprite;
         private Sprite backSprite;
         private SpriteRenderer faceRenderer;
         private SpriteRenderer shadowRenderer;
         private SpriteRenderer highlightRenderer;
+        private MaterialPropertyBlock cardProperties;
         private Transform visual;
         private Transform shadow;
         private Action<FeelSound> soundRequested;
@@ -46,6 +48,7 @@ namespace DoubleDown.Presentation
             Sprite front,
             Sprite back,
             Sprite shadowSprite,
+            Material inkMaterial,
             Action<FeelSound> onSound,
             int index)
         {
@@ -70,6 +73,9 @@ namespace DoubleDown.Presentation
             face.transform.SetParent(visual, false);
             faceRenderer = face.AddComponent<SpriteRenderer>();
             faceRenderer.sprite = backSprite;
+            faceRenderer.sharedMaterial = inkMaterial;
+            cardProperties = new MaterialPropertyBlock();
+            SetCardInk(false);
 
             shadow = new GameObject("Shadow").transform;
             shadow.SetParent(transform, false);
@@ -86,6 +92,7 @@ namespace DoubleDown.Presentation
             gameObject.SetActive(true);
             frontSprite = front;
             faceRenderer.sprite = backSprite;
+            SetCardInk(false);
             highlightRenderer.sprite = front;
             IsFaceUp = false;
             IsSelected = false;
@@ -260,15 +267,16 @@ namespace DoubleDown.Presentation
                 scale + punch - squash,
                 1f);
 
+            // Keep the pixel art parallel to the camera. Pitch/yaw turn the tiny suit
+            // pixels into uneven trapezoids, even with point filtering enabled.
             var pointerOffset = pointerWorld - transform.position;
-            var tiltX = IsHovered || IsDragging ? Mathf.Clamp(pointerOffset.y * profile.cursorTilt, -profile.cursorTilt, profile.cursorTilt) : 0f;
-            var tiltY = IsHovered || IsDragging ? Mathf.Clamp(-pointerOffset.x * profile.cursorTilt, -profile.cursorTilt, profile.cursorTilt) : 0f;
+            var cursorRoll = IsHovered || IsDragging
+                ? Mathf.Clamp(-pointerOffset.x * profile.cursorTilt, -profile.cursorTilt, profile.cursorTilt)
+                : 0f;
             var sway = Mathf.Sin(Time.unscaledTime * profile.swaySpeed + swayPhase) * profile.swayAngle;
             var dragRotation = IsDragging ? Mathf.Clamp(-velocity.x * profile.velocityTilt, -20f, 20f) : 0f;
-            var targetRotation = Quaternion.Euler(
-                tiltX * motionFactor,
-                tiltY * motionFactor,
-                baseAngle + (sway + dragRotation) * motionFactor);
+            var targetRotation = Quaternion.Euler(0f, 0f,
+                baseAngle + (cursorRoll + sway + dragRotation) * motionFactor);
             visual.localRotation = Quaternion.Slerp(visual.localRotation, targetRotation, response);
 
             shadow.localPosition = new Vector3(0.08f + lift * 0.25f, -0.1f - lift * 0.35f, 0f);
@@ -319,6 +327,7 @@ namespace DoubleDown.Presentation
             {
                 IsFaceUp = flipTargetFaceUp;
                 faceRenderer.sprite = IsFaceUp ? frontSprite : backSprite;
+                SetCardInk(IsFaceUp && frontSprite.name.StartsWith("card_diamonds_", StringComparison.Ordinal));
             }
 
             if (t >= 1f)
@@ -333,6 +342,12 @@ namespace DoubleDown.Presentation
         private void Punch(float duration)
         {
             punchTime = Mathf.Max(punchTime, duration);
+        }
+
+        private void SetCardInk(bool recolor)
+        {
+            cardProperties.SetFloat(RecolorId, recolor ? 1f : 0f);
+            faceRenderer.SetPropertyBlock(cardProperties);
         }
 
         private void UpdateSorting()

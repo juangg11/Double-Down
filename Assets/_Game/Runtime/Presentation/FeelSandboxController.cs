@@ -10,6 +10,8 @@ namespace DoubleDown.Presentation
         private const int MaximumCards = 20;
         private const int SparkCount = 56;
         private const float PanelWidth = 326f;
+        private const float CompactPanelHeight = 54f;
+        private const float ExpandedPanelHeight = 590f;
 
         [Header("Configuration")]
         [SerializeField] private FeelProfile profileAsset;
@@ -19,15 +21,14 @@ namespace DoubleDown.Presentation
         [SerializeField] private Sprite[] cardFaces;
         [SerializeField] private Sprite cardBack;
         [SerializeField] private Sprite cardShadow;
-        [SerializeField] private Sprite cardSlot;
         [SerializeField] private Sprite sparkSprite;
+        [SerializeField] private Material cardInkMaterial;
 
         [Header("Audio: enum FeelSound order")]
         [SerializeField] private AudioClip[] soundClips;
 
         private readonly List<FeelCardView> cards = new List<FeelCardView>(MaximumCards);
         private readonly FeelCardView[] cardPool = new FeelCardView[MaximumCards];
-        private readonly SpriteRenderer[] slots = new SpriteRenderer[MaximumCards];
         private readonly Spark[] sparks = new Spark[SparkCount];
         private readonly AudioSource[] audioSources = new AudioSource[8];
         private readonly System.Random visualRandom = new System.Random(89127);
@@ -46,6 +47,8 @@ namespace DoubleDown.Presentation
         private int nextSpark;
         private bool reduceMotion;
         private bool muteAudio;
+        private bool showTuning;
+        private Vector2 tuningScroll;
         private float averageFrameTime = 1f / 60f;
 
         private sealed class Spark
@@ -58,7 +61,8 @@ namespace DoubleDown.Presentation
 
         private void Awake()
         {
-            if (profileAsset == null || inputActions == null || cardBack == null || cardFaces == null || cardFaces.Length == 0)
+            if (profileAsset == null || inputActions == null || cardBack == null || cardInkMaterial == null ||
+                cardFaces == null || cardFaces.Length == 0)
             {
                 throw new InvalidOperationException("Feel Sandbox scene references are incomplete.");
             }
@@ -77,7 +81,6 @@ namespace DoubleDown.Presentation
             confirmAction = inputActions.FindAction("Table/Confirm", true);
 
             CreateCardPool();
-            CreateSlotPool();
             CreateSparkPool();
             CreateAudioPool();
         }
@@ -142,6 +145,7 @@ namespace DoubleDown.Presentation
                 if (keyboard.fKey.wasPressedThisFrame) FlipFocusedCard();
                 if (keyboard.rKey.wasPressedThisFrame) ResetHand(7);
                 if (keyboard.tKey.wasPressedThisFrame) ResetHand(20);
+                if (keyboard.f1Key.wasPressedThisFrame) showTuning = !showTuning;
             }
 
             if (cancelAction.WasPressedThisFrame())
@@ -160,7 +164,8 @@ namespace DoubleDown.Presentation
 
         private void HandlePointer(Vector2 screenPoint, Vector3 worldPoint)
         {
-            var overPanel = screenPoint.x < PanelWidth + 20f && screenPoint.y > Screen.height - 650f;
+            var panelHeight = Mathf.Min(showTuning ? ExpandedPanelHeight : CompactPanelHeight, Screen.height - 20f);
+            var overPanel = screenPoint.x < PanelWidth + 20f && screenPoint.y > Screen.height - panelHeight - 10f;
             if (pressedCard == null)
             {
                 var hit = overPanel ? null : FindTopCard(worldPoint);
@@ -277,7 +282,6 @@ namespace DoubleDown.Presentation
                 if (i >= count)
                 {
                     card.gameObject.SetActive(false);
-                    slots[i].gameObject.SetActive(false);
                     continue;
                 }
 
@@ -293,7 +297,6 @@ namespace DoubleDown.Presentation
                 card.ResetForDeal(cardFaces[faceIndex], new Vector3(-4.3f, 1.55f, 0f), target,
                     LayoutAngle(i, count), i * 0.075f);
                 card.SetLayout(target, LayoutAngle(i, count), i);
-                slots[i].gameObject.SetActive(true);
             }
 
             UpdateLayout();
@@ -306,9 +309,6 @@ namespace DoubleDown.Presentation
                 var position = LayoutPosition(i, cards.Count);
                 var angle = LayoutAngle(i, cards.Count);
                 cards[i].SetLayout(position, angle, i);
-                slots[i].transform.position = position + Vector3.forward * 0.1f;
-                slots[i].transform.rotation = Quaternion.Euler(0f, 0f, angle);
-                slots[i].transform.localScale = Vector3.one * profile.cardScale;
             }
         }
 
@@ -316,14 +316,19 @@ namespace DoubleDown.Presentation
         {
             var spacing = Mathf.Min(profile.cardSpacing, 7.7f / Mathf.Max(1, count - 1));
             var normalized = count <= 1 ? 0f : index / (float)(count - 1) * 2f - 1f;
+            // The reference hand rises at the centre and returns to the baseline
+            // at the outer cards. The curve stays gentle at seven cards and scales
+            // down for small hands.
+            var influence = Mathf.Clamp01((count - 1f) / 6f);
             return new Vector3((index - (count - 1) * 0.5f) * spacing,
-                -1.38f + profile.fanCurve.Evaluate((normalized + 1f) * 0.5f) * profile.fanHeight, 0f);
+                -1.42f + profile.fanCurve.Evaluate((normalized + 1f) * 0.5f) * profile.fanHeight * influence, 0f);
         }
 
         private float LayoutAngle(int index, int count)
         {
             var normalized = count <= 1 ? 0f : index / (float)(count - 1) * 2f - 1f;
-            return -normalized * profile.fanAngle;
+            var influence = Mathf.Clamp01((count - 1f) / 6f);
+            return -normalized * profile.fanAngle * influence;
         }
 
         private void CreateCardPool()
@@ -335,22 +340,7 @@ namespace DoubleDown.Presentation
                 var gameObject = new GameObject("Card " + (i + 1));
                 gameObject.transform.SetParent(parent, false);
                 cardPool[i] = gameObject.AddComponent<FeelCardView>();
-                cardPool[i].Initialize(profile, cardFaces[0], cardBack, cardShadow, PlaySound, i);
-            }
-        }
-
-        private void CreateSlotPool()
-        {
-            var parent = new GameObject("Hand Slots").transform;
-            parent.SetParent(transform, false);
-            for (var i = 0; i < MaximumCards; i++)
-            {
-                var gameObject = new GameObject("Slot " + (i + 1));
-                gameObject.transform.SetParent(parent, false);
-                slots[i] = gameObject.AddComponent<SpriteRenderer>();
-                slots[i].sprite = cardSlot;
-                slots[i].sortingOrder = -100;
-                gameObject.SetActive(false);
+                cardPool[i].Initialize(profile, cardFaces[0], cardBack, cardShadow, cardInkMaterial, PlaySound, i);
             }
         }
 
@@ -435,8 +425,17 @@ namespace DoubleDown.Presentation
         private void OnGUI()
         {
             if (profile == null) return;
-            GUILayout.BeginArea(new Rect(10f, 10f, PanelWidth, 650f), GUI.skin.box);
+            var panelHeight = Mathf.Min(showTuning ? ExpandedPanelHeight : CompactPanelHeight, Screen.height - 20f);
+            GUILayout.BeginArea(new Rect(10f, 10f, PanelWidth, panelHeight), GUI.skin.box);
             GUILayout.Label("DOUBLE DOWN  |  FEEL SANDBOX");
+            if (GUILayout.Button(showTuning ? "Ocultar ajustes (F1)" : "Ajustes (F1)"))
+                showTuning = !showTuning;
+            if (!showTuning)
+            {
+                GUILayout.EndArea();
+                return;
+            }
+            tuningScroll = GUILayout.BeginScrollView(tuningScroll);
             GUILayout.Label("Arrastra para reordenar. Clic: seleccionar. F: voltear.");
             GUILayout.Label("D: repartir  R: 7 cartas  T: 20 cartas  Esc: limpiar");
             GUILayout.Label("FPS aproximados: " + (1f / Mathf.Max(averageFrameTime, 0.001f)).ToString("F0"));
@@ -455,7 +454,7 @@ namespace DoubleDown.Presentation
             profile.fanAngle = Slider("Angulo abanico", profile.fanAngle, 0f, 30f);
             profile.hoverLift = Slider("Elevacion hover", profile.hoverLift, 0f, 0.8f);
             profile.hoverScale = Slider("Escala hover", profile.hoverScale, 1f, 1.5f);
-            profile.cursorTilt = Slider("Tilt cursor", profile.cursorTilt, 0f, 30f);
+            profile.cursorTilt = Slider("Giro cursor", profile.cursorTilt, 0f, 30f);
             profile.velocityTilt = Slider("Tilt velocidad", profile.velocityTilt, 0f, 20f);
             profile.swayAngle = Slider("Sway", profile.swayAngle, 0f, 5f);
             profile.dealDuration = Slider("Tiempo reparto", profile.dealDuration, 0.15f, 1.2f);
@@ -471,6 +470,7 @@ namespace DoubleDown.Presentation
                 profile.dealCurve = new AnimationCurve(new Keyframe(0f, 0f, 0f, 3.5f), new Keyframe(1f, 1f, 0f, 0f));
             reduceMotion = GUILayout.Toggle(reduceMotion, "Reducir movimiento");
             muteAudio = GUILayout.Toggle(muteAudio, "Silenciar SFX");
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 

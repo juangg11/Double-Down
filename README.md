@@ -1,6 +1,6 @@
 # DOUBLE DOWN
 
-Proyecto Unity 6.3.26f1. Estado: **Fase 1 terminada; sandbox interactivo de game feel, sin blackjack todavía**.
+Proyecto Unity 6.3.26f1. Estado: **Fase 1 revisada y lista para evaluación; sandbox interactivo de game feel, sin blackjack todavía**.
 
 ## Abrir
 

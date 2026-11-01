@@ -3,23 +3,27 @@
 ## Hecho
 
 - Escena `FeelSandbox.unity` con 52 sprites de cartas disponibles y siete cartas repartidas al iniciar.
-- Hover, tilt 3D, sombra dinámica, sway, selección con punch/destellos, arrastre amortiguado, swap, reparto con arco/rebote y flip.
-- Panel de depuración que ajusta parámetros en Play, modo de 20 cartas, reducción de movimiento y mute.
-- Siete SFX Kenney CC0 con variación de pitch y pools para cartas, slots, destellos y fuentes de audio.
+- Hover con giro 2D, sombra dinámica, sway, selección con punch/destellos, arrastre amortiguado, swap, reparto con arco/rebote y flip.
+- Abanico suave basado en las curvas de la referencia: siete cartas a escala 2×, centro elevado 0,14 unidades y extremos girados ±8,4°.
+- Shader URP original para el fondo geométrico; luz global 2D y shader de tinta que deja los corazones rojos y muestra los diamantes en ámbar.
+- Panel compacto de depuración que se abre con `F1`, con scroll, modo de 20 cartas, reducción de movimiento y mute.
+- Siete SFX Kenney CC0 con variación de pitch y pools para cartas, destellos y fuentes de audio.
 - Corrección justificada de Fase 0: ambas escenas usan Pixel Perfect Camera de URP, no el componente clásico incompatible.
-- Prueba de Play Mode: siete cartas activas y boca arriba tras el reparto.
+- Prueba de Play Mode: siete cartas activas y boca arriba, escala, abanico, rotación sin perspectiva, tinta y shader de fondo.
 
 ## Abrir y probar
 
 1. Si Unity ya tenía `Bootstrap.unity` abierto antes de esta entrega, vuelve a abrir una escena desde Project para cargar su versión nueva guardada en disco.
 2. Abre `Assets/_Game/Scenes/FeelSandbox.unity`, pulsa Play y espera aproximadamente un segundo al reparto.
-3. Prueba los controles de `FEEL_SANDBOX.md` y ajusta sliders mientras observas las cartas.
+3. Prueba los controles de `FEEL_SANDBOX.md`; pulsa `F1` para abrir los sliders.
 4. En Test Runner, ejecuta `DoubleDown.Tests.PlayMode > SandboxDealsSevenFaceUpCards`.
 
 ## Checklist manual
 
 - [ ] Al iniciar se reparten siete cartas con arco, rebote, flip y sonidos escalonados.
-- [ ] Hover eleva, escala, inclina y desplaza la sombra sin saltos visibles.
+- [ ] Hover eleva, escala, gira suavemente en el plano y desplaza la sombra sin saltos visibles.
+- [ ] Corazones rojos y diamantes ámbar se distinguen; los naipes se ven completos y sin deformación 3D.
+- [ ] El fondo muestra figuras geométricas nítidas y no presenta artefactos.
 - [ ] Clic corto selecciona/deselecciona con punch y destellos.
 - [ ] Arrastrar sigue al cursor con retraso amortiguado; al soltar vuelve al abanico.
 - [ ] Al cruzar otras cartas, el orden cambia una sola vez por cruce y las cartas vecinas se recolocan.
@@ -31,14 +35,16 @@
 
 ## Verificación automatizada
 
-Compilación en Unity 6.3.26f1 sin warnings de C#. Play Mode Test Runner: 1 prueba ejecutada, 1 superada. El test valida el reparto inicial, la revelación y que no quedan cartas en tránsito.
+Compilación en Unity 6.3.26f1. Play Mode Test Runner: 1 prueba ejecutada, 1 superada. El test valida reparto, revelación, escala, curva, rotación, material de tinta y shader del fondo. Se inspeccionó una captura RenderTexture de 640×360.
+
+![Captura de la cámara del sandbox a 640×360](Phase1Preview.png)
 
 ## Problemas conocidos y alcance
 
 - El resultado táctil, audio percibido y 60 FPS todavía necesitan tu evaluación manual. No se pueden certificar mediante el test de reparto.
 - La UI de depuración es IMGUI temporal. Los sprites de Kenney son cuadrados; los marcos de naipe final no existen todavía.
 - `Bootstrap.unity` puede quedar con su versión antigua en memoria si Unity estaba abierto al actualizar archivos externos; abrir la escena de nuevo carga la cámara URP corregida.
-- Las reglas de blackjack, puntuación, shaders definitivos y contenido de tienda pertenecen a fases posteriores.
+- Las reglas de blackjack, puntuación y contenido de tienda pertenecen a fases posteriores.
 
 ## Assets para Fase 2
 

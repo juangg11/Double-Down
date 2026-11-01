@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace DoubleDown.Editor
 {
@@ -12,6 +13,8 @@ namespace DoubleDown.Editor
     {
         private const string ScenePath = "Assets/_Game/Scenes/FeelSandbox.unity";
         private const string ProfilePath = "Assets/_Game/Settings/FeelProfile.asset";
+        private const string TableMaterialPath = "Assets/_Game/Settings/GeometricTable.mat";
+        private const string CardInkMaterialPath = "Assets/_Game/Settings/CardInk.mat";
 
         [MenuItem("Double Down/Phase 1/Rebuild Both Scenes")]
         public static void RebuildAll()
@@ -58,9 +61,44 @@ namespace DoubleDown.Editor
             cameraObject.AddComponent<AudioListener>();
             ConfigurePixelPerfect(cameraObject);
 
-            var tableObject = new GameObject("PH Table Felt");
-            var tableRenderer = tableObject.AddComponent<SpriteRenderer>();
-            tableRenderer.sprite = LoadRequired<Sprite>("Assets/_Placeholders/PH_TableFelt.png");
+            var lightObject = new GameObject("Global Light 2D");
+            var globalLight = lightObject.AddComponent<Light2D>();
+            globalLight.lightType = Light2D.LightType.Global;
+            globalLight.intensity = 1f;
+
+            var tableShader = LoadRequired<Shader>("Assets/Art/Shaders/GeometricTable.shader");
+            var tableMaterial = AssetDatabase.LoadAssetAtPath<Material>(TableMaterialPath);
+            if (tableMaterial == null)
+            {
+                tableMaterial = new Material(tableShader) { name = "Geometric Table" };
+                AssetDatabase.CreateAsset(tableMaterial, TableMaterialPath);
+            }
+            else if (tableMaterial.shader != tableShader)
+            {
+                tableMaterial.shader = tableShader;
+                EditorUtility.SetDirty(tableMaterial);
+            }
+
+            var cardInkShader = LoadRequired<Shader>("Assets/Art/Shaders/CardInk.shader");
+            var cardInkMaterial = AssetDatabase.LoadAssetAtPath<Material>(CardInkMaterialPath);
+            if (cardInkMaterial == null)
+            {
+                cardInkMaterial = new Material(cardInkShader) { name = "Card Ink" };
+                AssetDatabase.CreateAsset(cardInkMaterial, CardInkMaterialPath);
+            }
+            else if (cardInkMaterial.shader != cardInkShader)
+            {
+                cardInkMaterial.shader = cardInkShader;
+                EditorUtility.SetDirty(cardInkMaterial);
+            }
+
+            var tableObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            tableObject.name = "Geometric Table (Shader)";
+            tableObject.transform.position = new Vector3(0f, 0f, 1f);
+            tableObject.transform.localScale = new Vector3(10f, 5.625f, 1f);
+            UnityEngine.Object.DestroyImmediate(tableObject.GetComponent<Collider>());
+            var tableRenderer = tableObject.GetComponent<MeshRenderer>();
+            tableRenderer.sharedMaterial = tableMaterial;
             tableRenderer.sortingOrder = -200;
 
             var sandboxObject = new GameObject("Feel Sandbox Controller");
@@ -73,10 +111,9 @@ namespace DoubleDown.Editor
                 LoadRequired<Sprite>("Assets/Art/Cards/Kenney/card_back.png");
             serialized.FindProperty("cardShadow").objectReferenceValue =
                 LoadRequired<Sprite>("Assets/_Placeholders/PH_CardShadow.png");
-            serialized.FindProperty("cardSlot").objectReferenceValue =
-                LoadRequired<Sprite>("Assets/_Placeholders/PH_CardSlot.png");
             serialized.FindProperty("sparkSprite").objectReferenceValue =
                 LoadRequired<Sprite>("Assets/_Placeholders/PH_HoverSpark.png");
+            serialized.FindProperty("cardInkMaterial").objectReferenceValue = cardInkMaterial;
 
             var faceProperty = serialized.FindProperty("cardFaces");
             faceProperty.arraySize = faces.Length;

@@ -12,18 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de6cd64266926d949988f63adcbfed3e, type: 3}
   m_Name: FeelProfile
   m_EditorClassIdentifier: DoubleDown.Runtime::DoubleDown.Presentation.FeelProfile
-  cardSpacing: 0.72
-  fanHeight: 0.26
-  fanAngle: 13
-  cardScale: 1.05
+  cardSpacing: 0.86
+  fanHeight: 0.14
+  fanAngle: 8.4
+  cardScale: 2
   fanCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: 6.9
+      outSlope: 6.9
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -40,8 +40,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 1
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: -6.9
+      outSlope: -6.9
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -53,13 +53,13 @@ MonoBehaviour:
   springDamping: 15
   dragThreshold: 0.08
   hoverLift: 0.22
-  hoverScale: 1.13
+  hoverScale: 1.08
   selectLift: 0.38
-  dragScale: 1.2
+  dragScale: 1.12
   visualResponse: 17
-  cursorTilt: 13
-  velocityTilt: 7
-  swayAngle: 1.4
+  cursorTilt: 2
+  velocityTilt: 3
+  swayAngle: 0.3
   swaySpeed: 1.05
   dealDuration: 0.43
   dealCurve:
@@ -87,5 +87,5 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   flipDuration: 0.3
-  squashAmount: 0.11
+  squashAmount: 0.06
   sfxVolume: 0.55

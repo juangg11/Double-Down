@@ -2,7 +2,8 @@
   "name": "DoubleDown.Editor",
   "rootNamespace": "DoubleDown",
   "references": [
-    "DoubleDown.Runtime"
+    "DoubleDown.Runtime",
+    "Unity.RenderPipelines.Universal.2D.Runtime"
   ],
   "autoReferenced": true,
   "includePlatforms": [
