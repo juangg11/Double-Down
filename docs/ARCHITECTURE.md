@@ -42,7 +42,7 @@ docs/
 
 - Unity `6000.3.26f1`, Windows x64, URP 2D.
 - Resolución lógica `640×360`, `64 PPU`, escalado entero mediante Pixel Perfect Camera. En proporciones distintas de 16:9 se mantienen barras; una expansión controlada del fondo se evaluará en Fase 4.
-- El renderer 2D está basado en el template oficial de Unity 6 instalado localmente. La escena de arranque tiene solo cámara.
+- El renderer 2D está basado en el template oficial de Unity 6 instalado localmente. Se usa Pixel Perfect Camera de URP, con `UpscaleRenderTexture`, `Windowbox` y filtro Point. La escena de arranque tiene solo cámara.
 - `DoubleDownInput.inputactions`: mapa `Table` con `Point`, `Select`, `Cancel`, `Confirm`; Input System como único sistema activo.
 - TextMeshPro llega mediante `com.unity.ugui` en Unity 6.
-- La animación de Fase 1 usará un tween propio pequeño, con easing y cancelación por propietario. No se importa código de DOTween ni de la referencia.
+- La animación de Fase 1 reside en `FeelCardView`: muelle amortiguado, curvas ScriptableObject y temporizadores por carta. Cada carta controla sus propias transiciones, sin dependencia de DOTween ni código de la referencia.

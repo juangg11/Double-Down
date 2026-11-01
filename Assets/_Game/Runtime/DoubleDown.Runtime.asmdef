@@ -1,6 +1,8 @@
 {
   "name": "DoubleDown.Runtime",
   "rootNamespace": "DoubleDown",
-  "references": [],
+  "references": [
+    "Unity.InputSystem"
+  ],
   "autoReferenced": true
 }

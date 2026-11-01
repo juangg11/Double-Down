@@ -25,7 +25,7 @@ card_clubs_K.png        card_diamonds_K.png        card_hearts_K.png        card
 
 Cada `card_<palo>_<rango>.png` representa una carta. `card_back.png` es el reverso. Los sprites de Kenney son cuadrados; el sandbox de Fase 1 mostrará esta proporción sin deformarlos.
 
-## Fase 1: arte y audio a aportar si quieres sustituir los placeholders
+## Fase 1: arte y audio
 
 | Archivo exacto | Tamaño / formato | Descripción |
 | --- | --- | --- |
@@ -40,4 +40,6 @@ Cada `card_<palo>_<rango>.png` representa una carta. `card_back.png` es el rever
 | `SFX_CardDeal.wav` | 48 kHz, 16 bit, mono, ≤0,45 s | Reparto con arco. |
 | `SFX_CardSelect.wav` | 48 kHz, 16 bit, mono, ≤0,35 s | Salto/punch de selección. |
 
-Ubicación prevista: PNG en `Assets/Art/UI/` y WAV en `Assets/Audio/SFX/`. Si faltan al iniciar Fase 1, se usarán equivalentes temporales con prefijo `PH_` dentro de `Assets/_Placeholders/`; se podrán sustituir por estos nombres sin cambiar código. No se requieren imágenes de reliquias, consumibles o vales todavía: antes de definirlos se presentará una lista de propuestas y efectos para aprobación.
+En Fase 1 se generaron `PH_CardShadow.png`, `PH_CardSlot.png`, `PH_HoverSpark.png` y `PH_TableFelt.png` (640×360) en `Assets/_Placeholders/`. El audio se cubrió con siete archivos `.ogg` del paquete Kenney UI Audio que proporcionaste, copiados a `Assets/Audio/SFX/Kenney/` con nombres `SFX_CardHover`, `SFX_CardPickup`, `SFX_CardDrop`, `SFX_CardSwap`, `SFX_CardFlip`, `SFX_CardDeal` y `SFX_CardSelect`. Se conserva la licencia CC0 junto a los sonidos. Los nombres WAV anteriores quedan como especificación opcional para sustituirlos por audio propio; los OGG funcionan en Unity sin conversión.
+
+No se requieren imágenes de reliquias, consumibles o vales todavía: antes de definirlos se presentará una lista de propuestas y efectos para aprobación.

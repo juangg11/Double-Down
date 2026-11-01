@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Game/Scenes/FeelSandbox.unity
+    guid: 477b3bcd396bcef4d93d7de0c54743e6
+  - enabled: 0
     path: Assets/_Game/Scenes/Bootstrap.unity
     guid: 2744616964e68d24a8a3dbe3a88532f7
   m_configObjects: {}

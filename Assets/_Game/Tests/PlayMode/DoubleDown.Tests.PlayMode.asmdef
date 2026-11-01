@@ -1,0 +1,19 @@
+{
+  "name": "DoubleDown.Tests.PlayMode",
+  "rootNamespace": "DoubleDown.Tests",
+  "references": [
+    "DoubleDown.Runtime"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}
