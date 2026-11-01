@@ -20,11 +20,11 @@ namespace DoubleDown.Editor
             }
 
             var pixelPerfectType = AppDomain.CurrentDomain.GetAssemblies()
-                .Select(assembly => assembly.GetType("UnityEngine.U2D.PixelPerfectCamera", false))
+                .Select(assembly => assembly.GetType("UnityEngine.Rendering.Universal.PixelPerfectCamera", false))
                 .FirstOrDefault(type => type != null);
             if (pixelPerfectType == null)
             {
-                throw new InvalidOperationException("2D Pixel Perfect package is not installed.");
+                throw new InvalidOperationException("URP Pixel Perfect Camera is not available.");
             }
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -43,11 +43,11 @@ namespace DoubleDown.Editor
             SetProperty(pixelPerfect, "assetsPPU", 64);
             SetProperty(pixelPerfect, "refResolutionX", 640);
             SetProperty(pixelPerfect, "refResolutionY", 360);
-            SetProperty(pixelPerfect, "upscaleRT", true);
-            SetProperty(pixelPerfect, "pixelSnapping", true);
-            SetProperty(pixelPerfect, "cropFrameX", true);
-            SetProperty(pixelPerfect, "cropFrameY", true);
-            SetProperty(pixelPerfect, "stretchFill", false);
+            SetEnumProperty(pixelPerfect, "gridSnapping", "UpscaleRenderTexture");
+            SetEnumProperty(pixelPerfect, "cropFrame", "Windowbox");
+            var pixelSettings = new SerializedObject(pixelPerfect);
+            pixelSettings.FindProperty("m_FilterMode").enumValueIndex = 1;
+            pixelSettings.ApplyModifiedPropertiesWithoutUndo();
 
             if (!EditorSceneManager.SaveScene(scene, ScenePath))
             {
@@ -68,6 +68,17 @@ namespace DoubleDown.Editor
             }
 
             property.SetValue(target, value);
+        }
+
+        private static void SetEnumProperty(Component target, string name, string value)
+        {
+            var property = target.GetType().GetProperty(name);
+            if (property == null || !property.CanWrite)
+            {
+                throw new MissingMemberException(target.GetType().FullName, name);
+            }
+
+            property.SetValue(target, Enum.Parse(property.PropertyType, value));
         }
     }
 }

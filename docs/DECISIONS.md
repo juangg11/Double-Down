@@ -8,3 +8,4 @@
 | 2026-11-01 | Animación equivalente propia en vez de DOTween | Evita copiar el proyecto de referencia o incorporar un paquete externo; Fase 1 debe validar la calidad del resultado. |
 | 2026-11-01 | Sprites Kenney de 64×64 importados como sprites Point | El paquete suministrado tiene cartas cuadradas de 64×64, no cartas rectangulares. El marco de mesa será independiente. |
 | 2026-11-01 | No definir reliquias ni otros ítems todavía | El encargo exige presentar efectos e iconos al usuario antes de definirlos; corresponde a Fase 5. |
+| 2026-11-01 | Sustituir Pixel Perfect Camera clásico por el componente de URP | Unity mostraba incompatibilidad en Inspector. El componente URP con `UpscaleRenderTexture`, `Windowbox` y filtro Point conserva 640×360 sin el aviso. Es una corrección necesaria de Fase 0 realizada durante Fase 1. |
