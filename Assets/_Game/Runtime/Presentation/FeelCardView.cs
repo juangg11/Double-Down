@@ -49,6 +49,7 @@ namespace DoubleDown.Presentation
             Sprite back,
             Sprite shadowSprite,
             Material inkMaterial,
+            Material outlineMaterial,
             Action<FeelSound> onSound,
             int index)
         {
@@ -63,10 +64,9 @@ namespace DoubleDown.Presentation
 
             var highlight = new GameObject("Selection Glow");
             highlight.transform.SetParent(visual, false);
-            highlight.transform.localScale = new Vector3(1.15f, 1.15f, 1f);
             highlightRenderer = highlight.AddComponent<SpriteRenderer>();
             highlightRenderer.sprite = frontSprite;
-            highlightRenderer.color = new Color(0.95f, 0.72f, 0.25f, 0.42f);
+            highlightRenderer.sharedMaterial = outlineMaterial;
             highlightRenderer.enabled = false;
 
             var face = new GameObject("Card Face");
@@ -210,7 +210,11 @@ namespace DoubleDown.Presentation
 
         public bool HitTest(Vector3 worldPoint)
         {
-            return gameObject.activeSelf && !dealing && faceRenderer.bounds.Contains(worldPoint);
+            if (!gameObject.activeSelf || dealing) return false;
+            var local = visual.InverseTransformPoint(worldPoint);
+            var extents = faceRenderer.sprite.bounds.extents;
+            return Mathf.Abs(local.x) <= extents.x * 0.72f &&
+                   Mathf.Abs(local.y) <= extents.y * 0.96f;
         }
 
         public void Tick(float deltaTime, Vector3 pointerWorld, float motionFactor)

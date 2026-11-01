@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GeometricTable
+  m_Name: CasinoVortex
   m_Shader: {fileID: 4800000, guid: b8cff89885d8d7744a40499b84b45b5f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0

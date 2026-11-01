@@ -13,8 +13,9 @@ namespace DoubleDown.Editor
     {
         private const string ScenePath = "Assets/_Game/Scenes/FeelSandbox.unity";
         private const string ProfilePath = "Assets/_Game/Settings/FeelProfile.asset";
-        private const string TableMaterialPath = "Assets/_Game/Settings/GeometricTable.mat";
+        private const string TableMaterialPath = "Assets/_Game/Settings/CasinoVortex.mat";
         private const string CardInkMaterialPath = "Assets/_Game/Settings/CardInk.mat";
+        private const string OutlineMaterialPath = "Assets/_Game/Settings/SelectionOutline.mat";
 
         [MenuItem("Double Down/Phase 1/Rebuild Both Scenes")]
         public static void RebuildAll()
@@ -66,16 +67,21 @@ namespace DoubleDown.Editor
             globalLight.lightType = Light2D.LightType.Global;
             globalLight.intensity = 1f;
 
-            var tableShader = LoadRequired<Shader>("Assets/Art/Shaders/GeometricTable.shader");
+            var tableShader = LoadRequired<Shader>("Assets/Art/Shaders/CasinoVortex.shader");
             var tableMaterial = AssetDatabase.LoadAssetAtPath<Material>(TableMaterialPath);
             if (tableMaterial == null)
             {
-                tableMaterial = new Material(tableShader) { name = "Geometric Table" };
+                tableMaterial = new Material(tableShader) { name = "Casino Vortex" };
                 AssetDatabase.CreateAsset(tableMaterial, TableMaterialPath);
             }
             else if (tableMaterial.shader != tableShader)
             {
                 tableMaterial.shader = tableShader;
+                EditorUtility.SetDirty(tableMaterial);
+            }
+            if (tableMaterial.name != "CasinoVortex")
+            {
+                tableMaterial.name = "CasinoVortex";
                 EditorUtility.SetDirty(tableMaterial);
             }
 
@@ -92,8 +98,21 @@ namespace DoubleDown.Editor
                 EditorUtility.SetDirty(cardInkMaterial);
             }
 
+            var outlineShader = LoadRequired<Shader>("Assets/Art/Shaders/SelectionOutline.shader");
+            var outlineMaterial = AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath);
+            if (outlineMaterial == null)
+            {
+                outlineMaterial = new Material(outlineShader) { name = "Selection Outline" };
+                AssetDatabase.CreateAsset(outlineMaterial, OutlineMaterialPath);
+            }
+            else if (outlineMaterial.shader != outlineShader)
+            {
+                outlineMaterial.shader = outlineShader;
+                EditorUtility.SetDirty(outlineMaterial);
+            }
+
             var tableObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            tableObject.name = "Geometric Table (Shader)";
+            tableObject.name = "Casino Vortex (Shader)";
             tableObject.transform.position = new Vector3(0f, 0f, 1f);
             tableObject.transform.localScale = new Vector3(10f, 5.625f, 1f);
             UnityEngine.Object.DestroyImmediate(tableObject.GetComponent<Collider>());
@@ -114,6 +133,7 @@ namespace DoubleDown.Editor
             serialized.FindProperty("sparkSprite").objectReferenceValue =
                 LoadRequired<Sprite>("Assets/_Placeholders/PH_HoverSpark.png");
             serialized.FindProperty("cardInkMaterial").objectReferenceValue = cardInkMaterial;
+            serialized.FindProperty("selectionOutlineMaterial").objectReferenceValue = outlineMaterial;
 
             var faceProperty = serialized.FindProperty("cardFaces");
             faceProperty.arraySize = faces.Length;

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Linq;
+using System.Reflection;
 using DoubleDown.Presentation;
 using NUnit.Framework;
 using UnityEngine;
@@ -33,6 +34,9 @@ namespace DoubleDown.Tests
                 face.GetPropertyBlock(ink);
                 var diamond = face.sprite.name.StartsWith("card_diamonds_");
                 Assert.That(ink.GetFloat("_Recolor"), Is.EqualTo(diamond ? 1f : 0f).Within(0.01f));
+                var outline = visual.Find("Selection Glow").GetComponent<SpriteRenderer>();
+                Assert.AreEqual("DoubleDown/SelectionOutline", outline.sharedMaterial.shader.name);
+                Assert.That(outline.transform.localScale.x, Is.EqualTo(1f).Within(0.001f));
             }
 
             var ordered = cards.OrderBy(card => card.Position.x).ToArray();
@@ -41,11 +45,27 @@ namespace DoubleDown.Tests
             Assert.That(Mathf.DeltaAngle(0f, ordered[6].transform.Find("Visual").localEulerAngles.z),
                 Is.InRange(-11f, -6f));
 
-            var table = GameObject.Find("Geometric Table (Shader)");
+            var controller = UnityEngine.Object.FindFirstObjectByType<FeelSandboxController>();
+            var findCard = typeof(FeelSandboxController).GetMethod("FindTopCard",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(findCard);
+            for (var direction = 0; direction < 2; direction++)
+            {
+                for (var step = 0; step < ordered.Length; step++)
+                {
+                    var index = direction == 0 ? step : ordered.Length - 1 - step;
+                    var point = new Vector3(ordered[index].Position.x, -1.35f, 0f);
+                    var hit = findCard.Invoke(controller, new object[] { point });
+                    Assert.AreSame(ordered[index], hit,
+                        $"Picking failed at card {index}, direction {direction}.");
+                }
+            }
+
+            var table = GameObject.Find("Casino Vortex (Shader)");
             Assert.NotNull(table);
             var material = table.GetComponent<MeshRenderer>().sharedMaterial;
             Assert.NotNull(material);
-            Assert.AreEqual("DoubleDown/GeometricTable", material.shader.name);
+            Assert.AreEqual("DoubleDown/CasinoVortex", material.shader.name);
             Assert.IsTrue(material.shader.isSupported);
             Assert.NotNull(GameObject.Find("Global Light 2D"));
         }

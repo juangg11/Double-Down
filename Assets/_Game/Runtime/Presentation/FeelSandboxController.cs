@@ -23,6 +23,7 @@ namespace DoubleDown.Presentation
         [SerializeField] private Sprite cardShadow;
         [SerializeField] private Sprite sparkSprite;
         [SerializeField] private Material cardInkMaterial;
+        [SerializeField] private Material selectionOutlineMaterial;
 
         [Header("Audio: enum FeelSound order")]
         [SerializeField] private AudioClip[] soundClips;
@@ -62,6 +63,7 @@ namespace DoubleDown.Presentation
         private void Awake()
         {
             if (profileAsset == null || inputActions == null || cardBack == null || cardInkMaterial == null ||
+                selectionOutlineMaterial == null ||
                 cardFaces == null || cardFaces.Length == 0)
             {
                 throw new InvalidOperationException("Feel Sandbox scene references are incomplete.");
@@ -219,13 +221,18 @@ namespace DoubleDown.Presentation
 
         private FeelCardView FindTopCard(Vector3 point)
         {
-            if (hoveredCard != null && hoveredCard.HitTest(point)) return hoveredCard;
-            for (var i = cards.Count - 1; i >= 0; i--)
+            FeelCardView nearest = null;
+            var bestDistance = float.MaxValue;
+            for (var i = 0; i < cards.Count; i++)
             {
-                if (cards[i].HitTest(point)) return cards[i];
+                var card = cards[i];
+                if (!card.HitTest(point)) continue;
+                var distance = Mathf.Abs(point.x - card.Position.x);
+                if (distance >= bestDistance) continue;
+                bestDistance = distance;
+                nearest = card;
             }
-
-            return null;
+            return nearest;
         }
 
         private void TrySwap(FeelCardView card, float x)
@@ -340,7 +347,8 @@ namespace DoubleDown.Presentation
                 var gameObject = new GameObject("Card " + (i + 1));
                 gameObject.transform.SetParent(parent, false);
                 cardPool[i] = gameObject.AddComponent<FeelCardView>();
-                cardPool[i].Initialize(profile, cardFaces[0], cardBack, cardShadow, cardInkMaterial, PlaySound, i);
+                cardPool[i].Initialize(profile, cardFaces[0], cardBack, cardShadow,
+                    cardInkMaterial, selectionOutlineMaterial, PlaySound, i);
             }
         }
 

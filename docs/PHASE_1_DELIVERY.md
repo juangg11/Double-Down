@@ -5,7 +5,8 @@
 - Escena `FeelSandbox.unity` con 52 sprites de cartas disponibles y siete cartas repartidas al iniciar.
 - Hover con giro 2D, sombra dinámica, sway, selección con punch/destellos, arrastre amortiguado, swap, reparto con arco/rebote y flip.
 - Abanico suave basado en las curvas de la referencia: siete cartas a escala 2×, centro elevado 0,14 unidades y extremos girados ±8,4°.
-- Shader URP original para el fondo geométrico; luz global 2D y shader de tinta que deja los corazones rojos y muestra los diamantes en ámbar.
+- Shader URP original de remolino pixelado para el fondo; luz global 2D y shader de tinta que deja los corazones rojos y muestra los diamantes en ámbar.
+- Selección simétrica de izquierda a derecha y de derecha a izquierda, con contorno fino de un píxel.
 - Panel compacto de depuración que se abre con `F1`, con scroll, modo de 20 cartas, reducción de movimiento y mute.
 - Siete SFX Kenney CC0 con variación de pitch y pools para cartas, destellos y fuentes de audio.
 - Corrección justificada de Fase 0: ambas escenas usan Pixel Perfect Camera de URP, no el componente clásico incompatible.
@@ -23,7 +24,8 @@
 - [ ] Al iniciar se reparten siete cartas con arco, rebote, flip y sonidos escalonados.
 - [ ] Hover eleva, escala, gira suavemente en el plano y desplaza la sombra sin saltos visibles.
 - [ ] Corazones rojos y diamantes ámbar se distinguen; los naipes se ven completos y sin deformación 3D.
-- [ ] El fondo muestra figuras geométricas nítidas y no presenta artefactos.
+- [ ] El fondo muestra cintas de color pixeladas en movimiento, sin uniones bruscas.
+- [ ] Se puede recorrer y seleccionar cada carta en ambos sentidos.
 - [ ] Clic corto selecciona/deselecciona con punch y destellos.
 - [ ] Arrastrar sigue al cursor con retraso amortiguado; al soltar vuelve al abanico.
 - [ ] Al cruzar otras cartas, el orden cambia una sola vez por cruce y las cartas vecinas se recolocan.

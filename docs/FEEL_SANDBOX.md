@@ -30,7 +30,8 @@ El panel incluye presets que cambian `fanCurve` y `dealCurve` en Play. El asset 
 - El abanico usa una curva ScriptableObject: centro elevado, extremos más bajos y rotación de ±8,4° para siete cartas. Reordenar mueve la carta en la lista y las demás vuelven a su posición por muelle.
 - Las sprites se importan con filtro Point y la cámara URP usa 640×360, `UpscaleRenderTexture`, `Windowbox` y filtro Point.
 - Las cartas se muestran a escala entera 2× y permanecen paralelas a la cámara. Un shader de tinta cambia solo los píxeles rojos de los diamantes a ámbar; los corazones siguen rojos. Los PNG originales de Kenney se conservan.
-- El fondo es el shader original `GeometricTable`: óvalo, líneas, rombos y remaches geométricos. La escena incluye una luz global 2D para que las cartas se vean completas.
+- El fondo es el shader original `CasinoVortex`: cintas cromáticas animadas con deformación de dominio, paleta limitada y muestreo a 320×180 sobre la escena lógica de 640×360. La escena incluye una luz global 2D para que las cartas se vean completas.
+- La selección calcula la carta más cercana al centro bajo el puntero, así puede recorrer la mano en ambos sentidos aunque los sprites se solapen. El contorno seleccionado usa una línea fina de un píxel de la textura.
 - Los siete SFX son de Kenney UI Audio, CC0; cada reproducción tiene pequeña variación de pitch.
 
 ## Límites de Fase 1
