@@ -1,0 +1,11 @@
+{
+  "name": "DoubleDown.Editor",
+  "rootNamespace": "DoubleDown",
+  "references": [
+    "DoubleDown.Runtime"
+  ],
+  "autoReferenced": true,
+  "includePlatforms": [
+    "Editor"
+  ]
+}

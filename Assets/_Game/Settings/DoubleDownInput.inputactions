@@ -1,0 +1,63 @@
+{
+  "name": "DoubleDownInput",
+  "maps": [
+    {
+      "name": "Table",
+      "id": "eb8104b3-b3c2-4725-8a87-711ec01b74f5",
+      "actions": [
+        {
+          "name": "Point",
+          "type": "Value",
+          "id": "7a0980a8-f79f-46e5-a832-fb9a754a2c60",
+          "expectedControlType": "Vector2"
+        },
+        {
+          "name": "Select",
+          "type": "Button",
+          "id": "adf65305-be7f-4f77-a2d2-27e4407cbb5e",
+          "expectedControlType": "Button"
+        },
+        {
+          "name": "Cancel",
+          "type": "Button",
+          "id": "af04393c-c84b-4270-85d5-5c621d68eead",
+          "expectedControlType": "Button"
+        },
+        {
+          "name": "Confirm",
+          "type": "Button",
+          "id": "c8eaad5f-0ef6-4480-89f7-831e264b8ab5",
+          "expectedControlType": "Button"
+        }
+      ],
+      "bindings": [
+        {
+          "id": "c0f0527f-c467-4b3a-8f62-ed0504528bbf",
+          "path": "<Mouse>/position",
+          "action": "Point"
+        },
+        {
+          "id": "3eab8aee-297d-46f7-ac99-1689701ffa5a",
+          "path": "<Mouse>/leftButton",
+          "action": "Select"
+        },
+        {
+          "id": "c4e2938e-567c-4c97-9ff5-56fc230540ff",
+          "path": "<Mouse>/rightButton",
+          "action": "Cancel"
+        },
+        {
+          "id": "52b599a6-358a-4147-8ecd-e0fec62862b2",
+          "path": "<Keyboard>/escape",
+          "action": "Cancel"
+        },
+        {
+          "id": "22db5a6e-af20-40f3-b96b-6cbc4744fd3a",
+          "path": "<Keyboard>/enter",
+          "action": "Confirm"
+        }
+      ]
+    }
+  ],
+  "controlSchemes": []
+}

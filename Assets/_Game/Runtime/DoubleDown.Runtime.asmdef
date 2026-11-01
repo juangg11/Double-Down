@@ -1,0 +1,6 @@
+{
+  "name": "DoubleDown.Runtime",
+  "rootNamespace": "DoubleDown",
+  "references": [],
+  "autoReferenced": true
+}
