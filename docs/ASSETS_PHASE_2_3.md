@@ -1,6 +1,6 @@
 # Assets de Fase 2 y propuesta para Fase 3
 
-Fase 2 reutiliza los 52 PNG de cartas Kenney, reverso, `CardInk.mat`, `CasinoVortex.mat` y tres OGG de Kenney (`SFX_CardDeal`, `SFX_CardFlip`, `SFX_CardSelect`). TextMeshPro Essentials se incluye desde el paquete oficial de Unity, con la licencia OFL de Liberation Sans. No se necesita arte nuevo para ejecutar la mesa.
+Fase 2 y 3 reutilizan los 52 PNG de cartas Kenney, reverso, `CardInk.mat`, `CasinoVortex.mat` y tres OGG de Kenney (`SFX_CardDeal`, `SFX_CardFlip`, `SFX_CardSelect`). La tipografía activa es la fuente bitmap [Thaleah de Tiny Worlds](https://assetstore.unity.com/packages/2d/fonts/free-pixel-font-thaleah-140059), disponible gratis bajo la Standard Unity Asset Store EULA. Se importó desde la caché local de Asset Store. No se necesita arte nuevo para ejecutar la mesa.
 
 Para la presentación de la puntuación de Fase 3, estos archivos serían reemplazos opcionales de placeholders generados en el proyecto:
 

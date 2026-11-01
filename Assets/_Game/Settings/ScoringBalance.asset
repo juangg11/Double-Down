@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 853dd800fe79a974883d64478b5b0767, type: 3}
+  m_Name: ScoringBalance
+  m_EditorClassIdentifier: DoubleDown.Runtime::DoubleDown.Scoring.ScoringBalanceConfig
+  firstGoal: 120
+  goalGrowth: 1.18
+  handsPerRound: 4
+  chipsPerCard: 5
+  chipsPerWagerUnit: 1
+  wagerUnit: 2
+  winMultiplier: 2
+  blackjackMultiplier: 3.5
+  pushMultiplier: 0.5

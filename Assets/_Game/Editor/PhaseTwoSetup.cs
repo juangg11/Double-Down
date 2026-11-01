@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using DoubleDown.Blackjack;
 using DoubleDown.Presentation;
-using TMPro;
+using DoubleDown.Scoring;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,7 +14,8 @@ namespace DoubleDown.Editor
     {
         private const string ScenePath = "Assets/_Game/Scenes/BlackjackTable.unity";
         private const string RulesPath = "Assets/_Game/Settings/BlackjackRules.asset";
-        private const string FontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
+        private const string ScoringPath = "Assets/_Game/Settings/ScoringBalance.asset";
+        private const string FontPath = "Assets/Thaleah_PixelFont/ThaleahFat.fontsettings";
 
         [MenuItem("Double Down/Phase 2/Build Blackjack Table")]
         public static void Build()
@@ -25,10 +26,18 @@ namespace DoubleDown.Editor
                 rules = ScriptableObject.CreateInstance<BlackjackRulesConfig>();
                 AssetDatabase.CreateAsset(rules, RulesPath);
             }
+            var scoring = AssetDatabase.LoadAssetAtPath<ScoringBalanceConfig>(ScoringPath);
+            if (scoring == null)
+            {
+                scoring = ScriptableObject.CreateInstance<ScoringBalanceConfig>();
+                AssetDatabase.CreateAsset(scoring, ScoringPath);
+            }
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(RulesPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(ScoringPath, ImportAssetOptions.ForceUpdate);
             rules = Load<BlackjackRulesConfig>(RulesPath);
-            var font = Load<TMP_FontAsset>(FontPath);
+            scoring = Load<ScoringBalanceConfig>(ScoringPath);
+            var font = Load<Font>(FontPath);
             var faces = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Cards/Kenney" })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(path => path.EndsWith(".png") && !path.EndsWith("card_back.png"))
@@ -40,6 +49,7 @@ namespace DoubleDown.Editor
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             rules = Load<BlackjackRulesConfig>(RulesPath);
+            scoring = Load<ScoringBalanceConfig>(ScoringPath);
             var cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
@@ -67,6 +77,7 @@ namespace DoubleDown.Editor
             var controller = new GameObject("Blackjack Table Controller").AddComponent<BlackjackTableController>();
             var serialized = new SerializedObject(controller);
             serialized.FindProperty("rulesAsset").objectReferenceValue = rules;
+            serialized.FindProperty("scoringAsset").objectReferenceValue = scoring;
             serialized.FindProperty("cardBack").objectReferenceValue =
                 Load<Sprite>("Assets/Art/Cards/Kenney/card_back.png");
             serialized.FindProperty("cardInkMaterial").objectReferenceValue =
@@ -86,6 +97,8 @@ namespace DoubleDown.Editor
             EditorUtility.SetDirty(controller);
             if (serialized.FindProperty("rulesAsset").objectReferenceValue == null)
                 throw new InvalidOperationException("Blackjack rules were not assigned to the table.");
+            if (serialized.FindProperty("scoringAsset").objectReferenceValue == null)
+                throw new InvalidOperationException("Scoring balance was not assigned to the table.");
 
             if (!EditorSceneManager.SaveScene(scene, ScenePath))
                 throw new InvalidOperationException("Could not save Blackjack Table scene.");

@@ -62,38 +62,33 @@ Shader "DoubleDown/CasinoVortex"
                 // One sample per 2x2 logical pixels at the 640x360 reference size.
                 float2 cell = floor(input.uv * _PixelGrid.xy);
                 float2 uv = (cell + 0.5) / _PixelGrid.xy;
-                float2 p = (uv - 0.5) * float2(1.7777778, 1.0);
-                float radius = length(p);
-                float angle = atan2(p.y, p.x);
+                float2 p = uv * float2(1.7777778, 1.0);
                 float time = _Time.y * _Speed;
-
-                // Domain warp and spiral ribbons. The bounded field uses
-                // independent waves, without source code from the reference.
-                float spiral = angle + 3.35 * radius - 0.16 * time;
-                float2 flow = p + 0.18 * float2(
-                    cos(3.0 * spiral + 0.37 * time),
-                    sin(4.0 * spiral - 0.21 * time));
-                flow += 0.10 * float2(
-                    sin(7.0 * flow.y + 3.0 * flow.x + 0.13 * time),
-                    cos(6.0 * flow.x - 4.0 * flow.y - 0.17 * time));
-
-                float ribbon = sin(5.0 * spiral + 4.0 * flow.x - 2.0 * flow.y +
-                                   0.65 * sin(7.0 * flow.y + 0.2 * time) - 0.34 * time);
-                float tide = sin(4.6 * flow.x + 3.8 * flow.y + 0.23 * time) *
-                             cos(3.1 * flow.y - 2.2 * flow.x - 0.18 * time);
-                float field = 0.48 + 0.29 * ribbon + 0.18 * tide +
-                              0.10 * sin(9.0 * radius - 2.0 * spiral + 0.11 * time);
-                field += _Pulse * (1.0 - saturate(radius)) * 0.14;
-                field = floor(saturate(field) * 7.0 + 0.5) / 7.0;
+                // Slanted, warped colour bands. Every contour stays continuous
+                // across the play field; no polar angle or visible vortex centre.
+                float2 flow = p;
+                flow.x += 0.10 * sin(5.0 * p.y + 1.6 * p.x - time * 0.16);
+                flow.y += 0.13 * sin(4.0 * p.x - 3.3 * p.y + time * 0.12);
+                flow += 0.045 * float2(
+                    sin(12.0 * flow.y + 6.0 * flow.x + time * 0.22),
+                    cos(11.0 * flow.x - 5.0 * flow.y - time * 0.15));
+                float ribbons = sin(9.0 * flow.x + 5.0 * flow.y +
+                    1.4 * sin(3.8 * flow.y - 2.6 * flow.x + time * 0.10) - time * 0.18);
+                float veins = sin(17.0 * flow.x - 7.0 * flow.y - time * 0.11);
+                float field = 0.46 + 0.29 * ribbons + 0.10 * veins +
+                    0.10 * sin(5.4 * flow.y - 2.4 * flow.x + time * 0.13);
+                field += _Pulse * 0.13;
+                field = floor(saturate(field) * 9.0 + 0.5) / 9.0;
 
                 half3 colour = lerp(_Night.rgb, _Teal.rgb, saturate(field / 0.34));
                 colour = lerp(colour, _Blue.rgb, saturate((field - 0.34) / 0.24));
                 colour = lerp(colour, _Coral.rgb, saturate((field - 0.58) / 0.23));
                 colour = lerp(colour, _Gold.rgb, saturate((field - 0.81) / 0.19));
 
-                // Restrict brightness behind cards and keep a limited palette.
-                float vignette = 1.0 - smoothstep(0.48, 1.15, radius);
-                colour *= lerp(0.50, 0.88, vignette);
+                // The cards sit on a calm centre, while the colour lives in the edges.
+                float tableMask = 1.0 - smoothstep(0.16, 0.65,
+                    length((uv - float2(0.34, 0.49)) * float2(1.2, 1.0)));
+                colour *= lerp(0.82, 0.48, tableMask);
                 colour = floor(colour * 24.0 + 0.5) / 24.0;
                 return half4(colour, 1.0);
             }

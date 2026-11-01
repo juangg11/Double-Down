@@ -5,14 +5,14 @@
 - Mazo de 52 cartas, barajado determinista y pruebas con orden de robo preparado.
 - Valor de manos con varios ases, blackjack natural, banca en 17 blando, pago 3:2, seguro 2:1, pedir, plantarse, doblar y dividir.
 - Máquina de estados de turno, apuestas con reserva de fichas, dos manos tras dividir y eventos tipados para la presentación.
-- Escena `BlackjackTable.unity` con cartas Kenney, fondo pixelado, reverso oculto de la banca, TextMeshPro, botones y atajos de teclado. La interfaz se dibuja en el espacio lógico de 640×360 y deja visibles las cartas.
+- Escena `BlackjackTable.unity` con cartas Kenney, fondo pixelado, reverso oculto de la banca, fuente bitmap Thaleah, botones y atajos de teclado. La interfaz se dibuja en el espacio lógico de 640×360 y deja visibles las cartas.
 - Configuración `BlackjackRules.asset` editable sin cambiar código. Las animaciones de reparto reutilizan el material de tinta de la Fase 1.
 
 ## Abrir y probar
 
 1. Abre `Assets/_Game/Scenes/BlackjackTable.unity` en Unity 6.3.26f1 y pulsa Play. La primera ronda se reparte sola.
 2. Usa los botones o las teclas: `H` pedir, `S` plantarse, `D` doblar, `P` dividir, `Y` aceptar seguro, `N` rechazar seguro y `Espacio` repartir la siguiente ronda.
-3. Entre rondas cambia la apuesta con `−` y `+`. El perfil de reglas está en `Assets/_Game/Settings/BlackjackRules.asset`.
+3. Entre rondas cambia la apuesta con `-` y `+`. El perfil de reglas está en `Assets/_Game/Settings/BlackjackRules.asset`.
 4. En Test Runner ejecuta las suites EditMode y PlayMode de `DoubleDown.Tests`.
 
 ![Mesa de blackjack a 640×360](Phase2Preview.png)
@@ -35,7 +35,7 @@ Unity 6.3.26f1: 12 pruebas EditMode de reglas y mazo, 2 pruebas PlayMode de esce
 
 ## Alcance y límites
 
-La interfaz es funcional para probar las reglas, con paneles y tipografía temporales. No incluye todavía las metas, la puntuación fichas × multiplicador, tienda, reliquias, guardado ni una economía de run; corresponden a fases posteriores. El rendimiento a 60 FPS y las sensaciones de audio/animación deben confirmarse manualmente en el equipo objetivo.
+La puntuación y las metas se implementaron en la Fase 3; consulta `PHASE_3_DELIVERY.md`. La tienda, las reliquias, el guardado y la economía de run corresponden a fases posteriores. El rendimiento a 60 FPS y las sensaciones de audio/animación deben confirmarse manualmente en el equipo objetivo.
 
 ## Assets para Fase 3
 
