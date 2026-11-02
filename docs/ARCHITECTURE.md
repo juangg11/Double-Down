@@ -59,4 +59,4 @@ docs/
 
 La transición implementada es `meta superada → tienda → siguiente ronda`. `RunShop` adapta UI a `RunEconomy`, que es C# puro: inventario por ID, oro, ofertas y transacciones. `EconomyBalanceConfig` proporciona parámetros como ScriptableObject; el dominio recibe una copia inmutable de reglas. La tienda usa un RNG propio con la semilla de run, sin consumir azar del mazo ni de efectos visuales. Reabrir una ronda no duplica premios ni reinicia precios.
 
-El guardado del inventario y del estado RNG, los jefes y la edición del mazo todavía no están implementados. La arquitectura prevista arriba es una guía, no una afirmación de que esos sistemas ya existan.
+El guardado del inventario y del estado RNG y la edición del mazo todavía no están implementados. Las rondas jefe iniciales utilizan BossSchedule, BossDefinition y BossEncounterView; véase BOSSES.md. La arquitectura prevista arriba es una guía, no una afirmación de que esos sistemas ya existan.

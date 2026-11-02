@@ -29,6 +29,7 @@ namespace DoubleDown.Blackjack
     public sealed class BlackjackHand
     {
         private readonly List<PlayingCard> cards = new List<PlayingCard>(11);
+        private readonly bool acesLow;
         public IReadOnlyList<PlayingCard> Cards => cards;
         public long Stake { get; internal set; }
         public bool IsSplit { get; internal set; }
@@ -36,9 +37,9 @@ namespace DoubleDown.Blackjack
         public bool IsDoubled { get; internal set; }
         public bool IsFinished { get; internal set; }
         public HandOutcome Outcome { get; internal set; }
-        public HandValue Value => HandValue.Evaluate(cards, !IsSplit);
+        public HandValue Value => HandValue.Evaluate(cards, !IsSplit, acesLow);
 
-        internal BlackjackHand(long stake) => Stake = stake;
+        internal BlackjackHand(long stake, bool acesLow = false) { Stake = stake; this.acesLow = acesLow; }
         internal void Add(PlayingCard card) => cards.Add(card);
         internal PlayingCard RemoveSecondCard()
         {
@@ -57,6 +58,20 @@ namespace DoubleDown.Blackjack
         private readonly List<PlayingCard> dealer = new List<PlayingCard>(11);
         private BlackjackDeck deck;
         private long bankrollBeforeRound;
+        private bool playerAcesLow;
+        private int dealerStandTotal = 17;
+        public bool PlayerAcesLow => playerAcesLow;
+        public int DealerStandTotal => dealerStandTotal;
+
+        // Table rules change only between deals; they never reset bankroll or the deck seed.
+        public bool ConfigureTable(bool acesLow = false, int dealerStand = 17)
+        {
+            if (dealerStand < 17 || dealerStand > 20) throw new ArgumentOutOfRangeException(nameof(dealerStand));
+            if (Phase != BlackjackPhase.Ready && Phase != BlackjackPhase.Settled) return false;
+            playerAcesLow = acesLow;
+            dealerStandTotal = dealerStand;
+            return true;
+        }
 
         public event Action<BlackjackEvent> EventRaised;
         public BlackjackPhase Phase { get; private set; } = BlackjackPhase.Ready;
@@ -103,7 +118,7 @@ namespace DoubleDown.Blackjack
             ActiveHandIndex = 0;
             hands.Clear();
             dealer.Clear();
-            hands.Add(new BlackjackHand(wager));
+            hands.Add(new BlackjackHand(wager, playerAcesLow));
             EventRaised?.Invoke(new BlackjackEvent(BlackjackEventType.RoundStarted));
 
             DealPlayer(0);
@@ -190,7 +205,7 @@ namespace DoubleDown.Blackjack
             if (!CanSplit) return false;
             var first = ActiveHand;
             Bankroll -= first.Stake;
-            var second = new BlackjackHand(first.Stake) { IsSplit = true };
+            var second = new BlackjackHand(first.Stake, playerAcesLow) { IsSplit = true };
             second.Add(first.RemoveSecondCard());
             first.IsSplit = true;
             var splitAces = first.Cards[0].Rank == CardRank.Ace;
@@ -281,7 +296,7 @@ namespace DoubleDown.Blackjack
         private bool ShouldDealerHit()
         {
             var value = DealerValue;
-            return value.Total < 17 ||
+            return value.Total < dealerStandTotal ||
                    (value.Total == 17 && value.IsSoft && rules.DealerHitsSoft17);
         }
 

@@ -75,16 +75,19 @@ namespace DoubleDown.Scoring
     public sealed class ScoreRun
     {
         private readonly ScoreRules rules;
+        private readonly Func<int, int> handLimitForRound;
         public int Round { get; private set; } = 1;
         public int HandsRemaining { get; private set; }
+        public int HandLimit { get; private set; }
         public BigNumber Score { get; private set; }
         public BigNumber Goal { get; private set; }
         public BigNumber RunTotal { get; private set; }
         public ScoreRunState State { get; private set; } = ScoreRunState.Playing;
 
-        public ScoreRun(ScoreRules rules)
+        public ScoreRun(ScoreRules rules, Func<int, int> handLimitForRound = null)
         {
             this.rules = rules;
+            this.handLimitForRound = handLimitForRound;
             ResetRound();
         }
 
@@ -121,7 +124,10 @@ namespace DoubleDown.Scoring
 
         private void ResetRound()
         {
-            HandsRemaining = rules.HandsPerRound;
+            var limit = handLimitForRound?.Invoke(Round) ?? 0;
+            if (limit < 0) throw new ArgumentOutOfRangeException(nameof(handLimitForRound));
+            HandLimit = limit == 0 ? rules.HandsPerRound : Math.Min(rules.HandsPerRound, limit);
+            HandsRemaining = HandLimit;
             Goal = BigNumber.From(rules.FirstGoal) * BigNumber.Pow(rules.GoalGrowth, Round - 1);
             Score = BigNumber.Zero;
             State = ScoreRunState.Playing;

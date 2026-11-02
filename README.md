@@ -1,6 +1,6 @@
 # DOUBLE DOWN
 
-Proyecto Unity 6.3.26f1 para Windows, a 640×360. Estado: **blackjack, puntuación incremental, presentación y 15 reliquias integradas; Fase 6 en curso con tienda y economía**. El guardado, los jefes y el contenido completo de lanzamiento siguen pendientes.
+Proyecto Unity 6.3.26f1 para Windows, a 640×360. Estado: **blackjack, puntuación incremental, presentación y 15 reliquias integradas; Fase 6 en curso con tienda, economía y tres rondas jefe**. El guardado y el contenido completo de lanzamiento siguen pendientes.
 
 ## Abrir
 
@@ -25,6 +25,7 @@ Proyecto Unity 6.3.26f1 para Windows, a 640×360. Estado: **blackjack, puntuaci�
 - `docs/PHASE_4_DELIVERY.md`: shaders, ajustes y presentación.
 - `docs/PHASE_5_DELIVERY.md`: reliquias y orden de efectos.
 - `docs/PHASE_6_PROGRESS.md`: nueva distribución, tienda, configuración y trabajo pendiente.
+- `docs/BOSSES.md`: reglas de jefe, selección por semilla, configuración y pruebas.
 - `docs/UI_POLISH.md`: lateral, botones mates, assets utilizados y créditos del pack de interfaz.
 
 Durante la mano: **H** pedir, **S** plantarse, **D** doblar, **P** dividir. **Espacio** reparte o abre la tienda tras superar la meta. **Tab** abre las reliquias; **Esc**, los ajustes.

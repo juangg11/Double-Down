@@ -18,3 +18,4 @@
 | 2026-11-02 | Oro separado de las fichas de apuesta; cuatro reliquias iniciales | Conserva las reglas de blackjack y la build inicial mientras se introduce adquisición real; balance provisional configurable. |
 | 2026-11-02 | Renovación 2, 3, 4... por tienda; premio por manos restantes | Implementa coste creciente y recompensa de eficiencia; valores en EconomyBalance.asset. |
 | 2026-11-02 | Superficies mates con sprites del pack Crusenho y botones sin aclarado ni escala al hover | Revisión solicitada por el usuario; se conserva respuesta de un píxel y audio, con texto a escala fija. |
+| 2026-11-02 | Primeros jefes: ases bajos, banca en 18 y dos manos; aviso antes de repartir | Reglas previstas en el encargo original, con el icono provisional ya disponible. Las restricciones expiran al terminar la ronda y no reinician el saldo. |

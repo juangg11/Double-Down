@@ -57,7 +57,7 @@ namespace DoubleDown.Blackjack
             IsBlackjack = isBlackjack;
         }
 
-        public static HandValue Evaluate(IReadOnlyList<PlayingCard> cards, bool naturalEligible = true)
+        public static HandValue Evaluate(IReadOnlyList<PlayingCard> cards, bool naturalEligible = true, bool acesLow = false)
         {
             if (cards == null) throw new ArgumentNullException(nameof(cards));
             var total = 0;
@@ -67,7 +67,7 @@ namespace DoubleDown.Blackjack
                 total += card.BlackjackValue;
                 if (card.Rank == CardRank.Ace) aces++;
             }
-            var soft = aces > 0 && total + 10 <= 21;
+            var soft = !acesLow && aces > 0 && total + 10 <= 21;
             if (soft) total += 10;
             return new HandValue(total, soft, naturalEligible && cards.Count == 2 && total == 21);
         }

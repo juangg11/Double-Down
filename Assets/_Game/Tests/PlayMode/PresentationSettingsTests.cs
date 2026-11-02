@@ -129,6 +129,51 @@ namespace DoubleDown.Tests
             StringAssert.Contains("MANO 2  11\nTU TURNO", totals.text);
         }
 
+        [UnityTest]
+        public IEnumerator ThirdRoundAnnouncesBossBeforeDealingAndFourthRestoresRules()
+        {
+            SceneManager.LoadScene("BlackjackTable");
+            yield return new WaitForSecondsRealtime(0.5f);
+            var controller = Object.FindFirstObjectByType<BlackjackTableController>();
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var session = (DoubleDown.Blackjack.BlackjackSession)typeof(BlackjackTableController).GetField("session", flags).GetValue(controller);
+            var scoring = (DoubleDown.Scoring.ScoreRun)typeof(BlackjackTableController).GetField("scoreRun", flags).GetValue(controller);
+            var boss = Object.FindFirstObjectByType<BossEncounterView>();
+            for (var round = 1; round <= 3; round++)
+            {
+                if (session.Phase == DoubleDown.Blackjack.BlackjackPhase.Insurance) session.ChooseInsurance(false);
+                if (session.Phase == DoubleDown.Blackjack.BlackjackPhase.PlayerTurn) session.Stand();
+                while (session.Phase == DoubleDown.Blackjack.BlackjackPhase.DealerTurn) session.AdvanceDealerStep();
+                yield return new WaitForSecondsRealtime(0.9f);
+                if (scoring.State == DoubleDown.Scoring.ScoreRunState.Playing)
+                    scoring.RecordDeal(new[] { new DoubleDown.Scoring.ScoreBreakdown(DoubleDown.Scoring.BigNumber.From(999), 1) });
+                GameObject.Find("Blackjack HUD").transform.Find("Action Panel/Deal").GetComponent<Button>().onClick.Invoke();
+                Assert.IsTrue(Object.FindFirstObjectByType<RunShop>().IsOpen);
+                GameObject.Find("Run Shop").transform.Find("Continue").GetComponent<Button>().onClick.Invoke();
+                if (round == 2)
+                {
+                    Assert.IsTrue(boss.IsOpen);
+                    Assert.AreEqual(2, session.RoundIndex, "The third deal must wait for the boss announcement.");
+                    var panel = GameObject.Find("Boss Encounter").transform;
+                    StringAssert.Contains("MESA 01", panel.Find("Heading").GetComponent<Text>().text);
+                    Assert.IsNotEmpty(panel.Find("Rule").GetComponent<Text>().text);
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    Capture("BossRoundPreview.png");
+                    panel.Find("Enter").GetComponent<Button>().onClick.Invoke();
+                    Assert.IsFalse(boss.IsOpen);
+                    Assert.AreEqual(3, session.RoundIndex);
+                    Assert.AreEqual(18, session.DealerStandTotal, "The configured seed starts with BANCA 18.");
+                    yield return new WaitForSecondsRealtime(0.8f);
+                    Capture("BossTablePreview.png");
+                }
+                else Assert.IsFalse(boss.IsOpen);
+            }
+            Assert.AreEqual(4, scoring.Round);
+            Assert.AreEqual(4, scoring.HandLimit);
+            Assert.AreEqual(17, session.DealerStandTotal);
+            Assert.IsFalse(session.PlayerAcesLow);
+        }
+
         private static void Capture(string filename)
         {
             var directory = System.Environment.GetEnvironmentVariable("DOUBLEDOWN_CAPTURE_DIR");
@@ -143,7 +188,8 @@ namespace DoubleDown.Tests
             {
                 camera.targetTexture = target;
                 Canvas.ForceUpdateCanvases();
-                camera.Render();
+                UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(camera,
+                    new UnityEngine.Rendering.RenderPipeline.StandardRequest { destination = target });
                 RenderTexture.active = target;
                 picture.ReadPixels(new Rect(0, 0, 640, 360), 0, 0);
                 picture.Apply();

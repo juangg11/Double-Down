@@ -25,6 +25,10 @@ La tienda sustituye el área central de juego entre rondas, manteniendo visibles
 
 ![Tienda](Phase6Shop.png)
 
+## Rondas jefe integradas
+
+Cada tercera ronda incorpora una de tres reglas: ases bajos, banca en 18 o dos manos. Se anuncia antes del reparto y se retira al pasar de ronda. Consulta [BOSSES.md](BOSSES.md) para configuración, pruebas y límites.
+
 ## Archivos y configuración
 
 `Assets/Resources/EconomyBalance.asset` contiene oro inicial, precio de reliquia, coste inicial e incremento de renovación, premio base y oro por mano sobrante. `EconomyBalanceConfig` convierte esos datos en reglas de dominio. `RunEconomy` aplica las transacciones sin depender de la UI. `RunShop` presenta las ofertas y actualiza el HUD; `BlackjackTableController` enlaza victoria, tienda y siguiente ronda.
@@ -42,8 +46,8 @@ También se modificaron `RelicRack` (fila horizontal y equipamiento limitado al 
 
 ## Verificación y límites
 
-Las pruebas automatizadas comprueban transacciones deterministas, recompensa única, precios configurables, premio por manos sobrantes, coste creciente, agotamiento de catálogo, reinicio, bloqueo de equipamiento y continuidad a la siguiente ronda. La distribución se comprueba con manos de hasta once cartas y una división real en PlayMode. Se revisan capturas de mesa, división, catálogo y tienda a 640×360. Resultado de validación: **37 pruebas EditMode y 7 PlayMode superadas** en Unity 6000.3.26f1. Sin errores ni warnings de compilación C# en los registros de estas ejecuciones. La prueba del sandbox espera ahora a que termine el giro de las cartas, con un tiempo máximo, para evitar fallos por la duración de un frame en batch mode.
+Las pruebas automatizadas comprueban transacciones deterministas, recompensa única, precios configurables, premio por manos sobrantes, coste creciente, agotamiento de catálogo, reinicio, bloqueo de equipamiento y continuidad a la siguiente ronda. La distribución se comprueba con manos de hasta once cartas y una división real en PlayMode. Se revisan capturas de mesa, división, catálogo y tienda a 640×360. Resultado tras integrar los jefes: **43 pruebas EditMode y 8 PlayMode superadas** en Unity 6000.3.26f1. Sin errores ni warnings de compilación C# en los registros de estas ejecuciones. La prueba del sandbox espera ahora a que termine el giro de las cartas, con un tiempo máximo, para evitar fallos por la duración de un frame en batch mode.
 
-La Fase 6 **no está completa**. Faltan rondas jefe, consumibles, vales, edición de mazo, efectos jugables de ediciones/mejoras/sellos y la ampliación de contenido hasta los mínimos del encargo. El balance de economía es inicial y necesita simulaciones con builds; aún no es balance de lanzamiento. El guardado y la metaprogresión corresponden a la Fase 7. Las pruebas actuales no certifican rendimiento sostenido a 60 FPS ni una build de producción.
+La Fase 6 **no está completa**. Falta ampliar los jefes de 3 a 10, además de consumibles, vales, edición de mazo, efectos jugables de ediciones/mejoras/sellos y la ampliación de contenido hasta los mínimos del encargo. El balance de economía es inicial y necesita simulaciones con builds; aún no es balance de lanzamiento. El guardado y la metaprogresión corresponden a la Fase 7. Las pruebas actuales no certifican rendimiento sostenido a 60 FPS ni una build de producción.
 
 No hacen falta nuevos assets para este tramo: utiliza los 15 iconos provisionales aprobados y el audio suministrado. Los próximos lotes de objetos necesitan propuesta de efectos e iconos antes de incorporarse; no se han inventado nuevos ítems ni arte final.

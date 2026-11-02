@@ -36,6 +36,10 @@ namespace DoubleDown.Presentation
         private TablePresentation presentation;
         private RelicRack relicRack;
         private RunShop shop;
+        private BossSchedule bosses;
+        private BossRule? currentBoss;
+        private BossEncounterView bossView;
+        private Text bossText;
         private int winStreak;
         private AudioClip scoreSound;
         private Material backdropMaterial;
@@ -88,7 +92,8 @@ namespace DoubleDown.Presentation
             var rules = rulesAsset.ToRules();
             session = new BlackjackSession(rules, runSeed);
             scoreRules = scoringAsset.ToRules();
-            scoreRun = new ScoreRun(scoreRules);
+            bosses = new BossSchedule(Array.ConvertAll(Resources.LoadAll<BossDefinition>("Bosses"), boss => boss.ToRule()), runSeed);
+            scoreRun = new ScoreRun(scoreRules, round => bosses.ForRound(round)?.MaximumHands ?? 0);
             selectedWager = rules.MinimumWager;
             session.EventRaised += OnGameEvent;
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -111,7 +116,8 @@ namespace DoubleDown.Presentation
 
         private void Update()
         {
-            if ((presentation != null && presentation.IsOpen) || (relicRack != null && relicRack.IsOpen) || (shop != null && shop.IsOpen)) return;
+            if ((presentation != null && presentation.IsOpen) || (relicRack != null && relicRack.IsOpen) ||
+                (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
             HandleKeyboard();
             if (session.Phase == BlackjackPhase.DealerTurn)
             {
@@ -142,7 +148,7 @@ namespace DoubleDown.Presentation
 
         private void TryDeal()
         {
-            if (shop != null && shop.IsOpen) return;
+            if ((shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
             if (session.Phase != BlackjackPhase.Ready && session.Phase != BlackjackPhase.Settled) return;
             if (scoreRun.State == ScoreRunState.Won)
             {
@@ -153,6 +159,7 @@ namespace DoubleDown.Presentation
                     return;
                 }
                 scoreRun.NextRound();
+                formulaText.text = "FICHAS x MULT";
                 scoreBeforeAnimation = BigNumber.Zero;
                 scoreGain = BigNumber.Zero;
                 scoreAnimation = 1f;
@@ -163,7 +170,9 @@ namespace DoubleDown.Presentation
                 session = new BlackjackSession(rulesAsset.ToRules(), runSeed + (uint)session.RoundIndex);
                 session.EventRaised += OnGameEvent;
                 scoreRun.Restart();
+                formulaText.text = "FICHAS x MULT";
                 shop.ResetRun();
+                bossView.ResetRun();
                 relicRack.ResetLoadout();
                 winStreak = 0;
                 selectedWager = rulesAsset.minimumWager;
@@ -176,6 +185,14 @@ namespace DoubleDown.Presentation
             if (session.Bankroll < rulesAsset.minimumWager)
             {
                 scoreRun.Forfeit();
+                RefreshHud();
+                return;
+            }
+            currentBoss = bosses.ForRound(scoreRun.Round);
+            session.ConfigureTable(currentBoss?.PlayerAcesLow ?? false, currentBoss?.DealerStandTotal ?? 17);
+            if (currentBoss.HasValue && bossView.PresentedRound != scoreRun.Round)
+            {
+                bossView.Show(currentBoss.Value, scoreRun.Round, scoreRun.HandLimit, scoreRun.Goal, TryDeal);
                 RefreshHud();
                 return;
             }
@@ -331,14 +348,16 @@ namespace DoubleDown.Presentation
             goldText.text = shop.Economy.Gold.ToString();
             wagerText.text = (session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled
                 ? selectedWager : session.Wager).ToString("N0");
-            roundText.text = $"RONDA    {scoreRun.Round:00}";
-            messageText.text = scoreRun.State == ScoreRunState.Won ? "META COMPLETA!\nSIGUIENTE RONDA"
+            roundText.text = $"{(currentBoss.HasValue ? "JEFE" : "RONDA")}    {scoreRun.Round:00}";
+            bossText.text = currentBoss.HasValue ? "JEFE\n" + currentBoss.Value.Name : "";
+            messageText.text = bossView.IsOpen ? "RONDA JEFE\nREVISA LA REGLA"
+                : scoreRun.State == ScoreRunState.Won ? "META COMPLETA!\nSIGUIENTE RONDA"
                 : scoreRun.State == ScoreRunState.Lost ? "SIN MANOS.\nREINTENTA LA RUN"
                 : session.Phase == BlackjackPhase.PlayerTurn ? "PIDE O\nPLANTATE."
                 : session.Phase == BlackjackPhase.DealerTurn ? "JUEGA LA BANCA."
                 : PixelText(session.LastMessage);
             goalText.text = "META " + scoreRun.Goal;
-            handsText.text = "MANOS " + scoreRun.HandsRemaining + "/" + scoreRules.HandsPerRound;
+            handsText.text = "MANOS " + scoreRun.HandsRemaining + "/" + scoreRun.HandLimit;
             DrawScore(scoreAnimation >= 1f ? scoreRun.Score : scoreBeforeAnimation);
             dealerText.text = session.DealerCards.Count == 0 ? "BANCA\n-"
                 : $"BANCA\n{(session.DealerHoleRevealed ? session.DealerValue.Total.ToString() : session.DealerVisibleTotal + " + ?")}";
@@ -482,6 +501,7 @@ namespace DoubleDown.Presentation
             insuranceButton = MakeButton(side.transform, "Insurance", "SEGURO [Y]", 4, 0, 212, 34, ()=>session.ChooseInsurance(true));
             declineButton = MakeButton(side.transform, "No Insurance", "PASAR [N]", 228, 0, 212, 34, ()=>session.ChooseInsurance(false));
             dealerText = MakeText(canvas.transform, "Dealer Total", "BANCA", 180, 128, 88, 54, 16, Cyan);
+            bossText = MakeText(canvas.transform, "Boss Rule", "", 180, 90, 88, 34, 12, Gold);
             playerText = MakeText(canvas.transform, "Player Total", "TU MANO", 180, 222, 88, 70, 16, Gold);
             MakeStripe(canvas.transform, "Dealer Divider", 180, 192, 436, 1, new Color(0.2f,0.4f,0.44f,0.4f));
             relicRack = gameObject.AddComponent<RelicRack>();
@@ -492,6 +512,8 @@ namespace DoubleDown.Presentation
             relicRack.Owns = shop.Economy.Owns;
             presentation = gameObject.AddComponent<TablePresentation>();
             presentation.Initialize(canvas, fontAsset, backdropMaterial);
+            bossView = gameObject.AddComponent<BossEncounterView>();
+            bossView.Initialize(canvas, fontAsset);
         }
 
         private static Image MakePanel(Transform parent, string name, float x, float y,
