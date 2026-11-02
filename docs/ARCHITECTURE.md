@@ -51,4 +51,12 @@ docs/
 
 `BlackjackSession` es la máquina de estados y única autoridad sobre mazo, acciones, apuestas y pagos. `BlackjackRulesConfig` es el ScriptableObject de parámetros; `BlackjackRules` copia sus valores al crear la sesión. `BlackjackDeck` usa un generador con semilla propia; la UI y los sonidos no consumen ese RNG. `BlackjackEvent` anuncia reparto, cambio de mano, revelación y cierre.
 
-`BlackjackTableController` consume el estado y los eventos, construye el HUD con TextMeshPro, activa botones según acciones legales y reutiliza `BlackjackCardVisual` para animar cartas. Las reglas no conocen sprites, Canvas ni Input System. La puntuación incremental de Fase 3 consumirá los resultados de mano sin alterar el cálculo de blackjack.
+`BlackjackTableController` consume el estado y los eventos, construye el HUD con uGUI Text y la fuente bitmap pixelart, activa botones según acciones legales y reutiliza `BlackjackCardVisual` para animar cartas. Las reglas no conocen sprites, Canvas ni Input System. La puntuación incremental de Fase 3 consumirá los resultados de mano sin alterar el cálculo de blackjack.
+
+## Mesa y economía actuales (inicio de Fase 6)
+
+`TableLayout` reserva rectángulos lógicos a 640×360 para la información de la run, las reliquias, las cartas y las acciones. `BlackjackTableController` construye el HUD y utiliza esas posiciones para las cartas. `RelicRack` mantiene cuatro huecos en orden de izquierda a derecha y consulta la propiedad de cada reliquia antes de equiparla.
+
+La transición implementada es `meta superada → tienda → siguiente ronda`. `RunShop` adapta UI a `RunEconomy`, que es C# puro: inventario por ID, oro, ofertas y transacciones. `EconomyBalanceConfig` proporciona parámetros como ScriptableObject; el dominio recibe una copia inmutable de reglas. La tienda usa un RNG propio con la semilla de run, sin consumir azar del mazo ni de efectos visuales. Reabrir una ronda no duplica premios ni reinicia precios.
+
+El guardado del inventario y del estado RNG, los jefes y la edición del mazo todavía no están implementados. La arquitectura prevista arriba es una guía, no una afirmación de que esos sistemas ya existan.

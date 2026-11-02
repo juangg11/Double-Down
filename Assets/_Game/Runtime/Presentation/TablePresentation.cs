@@ -36,7 +36,7 @@ namespace DoubleDown.Presentation
                 overlay.GetComponent<Image>().material = glass;
                 overlay.GetComponent<Image>().raycastTarget = false;
             }
-            var hint = Label(canvas.transform, "Settings Hint", "ESC  AJUSTES", 303, 330, 130, 20);
+            var hint = Label(canvas.transform, "Settings Hint", "ESC  AJUSTES", 20, 336, 124, 16);
             hint.color = new Color(0.55f, 0.82f, 0.87f);
             drawer = Panel(canvas.transform, "Presentation Settings", 0, 0, 640, 360,
                 new Color(0f, 0f, 0f, 0.65f));
@@ -65,7 +65,7 @@ namespace DoubleDown.Presentation
             }
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Toggle();
         }
-        public void Toggle() { drawer.SetActive(!drawer.activeSelf); }
+        public void Toggle() { drawer.SetActive(!drawer.activeSelf); if (drawer.activeSelf) drawer.transform.SetAsLastSibling(); }
         private void Apply()
         {
             if (glass != null) glass.SetFloat("_Intensity", crt);

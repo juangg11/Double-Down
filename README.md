@@ -1,6 +1,6 @@
 # DOUBLE DOWN
 
-Proyecto Unity 6.3.26f1. Estado: **Fase 2 implementada: mesa jugable de blackjack y sandbox de game feel**.
+Proyecto Unity 6.3.26f1 para Windows, a 640×360. Estado: **blackjack, puntuación incremental, presentación y 15 reliquias integradas; Fase 6 en curso con tienda y economía**. El guardado, los jefes y el contenido completo de lanzamiento siguen pendientes.
 
 ## Abrir
 
@@ -20,5 +20,12 @@ Proyecto Unity 6.3.26f1. Estado: **Fase 2 implementada: mesa jugable de blackjac
 - `docs/BLACKJACK_RULES.md`: reglas y fases del turno.
 - `docs/PHASE_2_DELIVERY.md`: controles, verificación y pruebas manuales de Fase 2.
 - `docs/ASSETS_PHASE_2_3.md`: assets usados y reemplazos opcionales para Fase 3.
+
+- `docs/PHASE_3_DELIVERY.md`: puntuación, metas y simulación inicial.
+- `docs/PHASE_4_DELIVERY.md`: shaders, ajustes y presentación.
+- `docs/PHASE_5_DELIVERY.md`: reliquias y orden de efectos.
+- `docs/PHASE_6_PROGRESS.md`: nueva distribución, tienda, configuración y trabajo pendiente.
+
+Durante la mano: **H** pedir, **S** plantarse, **D** doblar, **P** dividir. **Espacio** reparte o abre la tienda tras superar la meta. **Tab** abre las reliquias; **Esc**, los ajustes.
 
 Los sprites de cartas de Kenney son CC0. El texto de licencia se conserva junto a ellos.

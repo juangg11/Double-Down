@@ -10,6 +10,7 @@ namespace DoubleDown.Presentation
     public sealed class RelicRack : MonoBehaviour
     {
         public RelicLoadout Loadout { get; } = new RelicLoadout();
+        public Func<string,bool> Owns { get; set; } = _ => true;
         public bool IsOpen => modal != null && modal.activeSelf;
         private readonly Text[] labels = new Text[4];
         private readonly Image[] icons = new Image[4];
@@ -34,14 +35,15 @@ namespace DoubleDown.Presentation
             if (catalog.Length < 15) throw new InvalidOperationException("Build the Phase 5 relic catalog first.");
             var initial = new[] {0,1,8,14};
             for (var i=0;i<4;i++) Loadout.Equip(i,catalog[initial[i]]);
-            Text(canvas.transform,"Relic Heading","RELIQUIAS [TAB]",14,118,125,16);
+            Text(canvas.transform,"Relic Heading","RELIQUIAS [TAB]",180,2,436,16);
             for (var i=0;i<4;i++)
             {
                 var slot=i;
-                var button=Button(canvas.transform,"Relic Slot "+i,"",14,136+i*22,128,20,()=>Open(slot));
-                labels[i]=Text(button.transform,"Name","",24,1,102,18);
+                var button=Button(canvas.transform,"Relic Slot "+i,"",180+i*112,20,100,64,()=>Open(slot));
+                labels[i]=Text(button.transform,"Name","",4,30,92,32);
+                labels[i].alignment=TextAnchor.MiddleCenter;
                 faces[i]=button.GetComponent<Image>();
-                icons[i]=Panel(button.transform,"Icon",2,2,16,16,Color.white).GetComponent<Image>();
+                icons[i]=Panel(button.transform,"Icon",38,5,24,24,Color.white).GetComponent<Image>();
                 icons[i].raycastTarget=false;
             }
             modal=Panel(canvas.transform,"Relic Collection",0,0,640,360,new Color(0,0,0,0.8f));
@@ -54,18 +56,24 @@ namespace DoubleDown.Presentation
                     12+(i%3)*184,36+(i/3)*27,176,23,()=>{candidate=relic; Refresh();});
             }
             details=Text(body.transform,"Description","",12,176,548,42);
-            Button(body.transform,"Up","SUBIR",12,232,88,30,()=>Move(-1));
-            Button(body.transform,"Down","BAJAR",108,232,88,30,()=>Move(1));
+            Button(body.transform,"Up","IZQUIERDA",12,232,88,30,()=>Move(-1));
+            Button(body.transform,"Down","DERECHA",108,232,88,30,()=>Move(1));
             equip=Button(body.transform,"Equip","EQUIPAR",226,232,124,30,()=>
             {
-                if(canEdit() && Loadout.Equip(selected,candidate)) Refresh();
+                if(canEdit() && Owns(candidate.id) && Loadout.Equip(selected,candidate)) Refresh();
             });
             Button(body.transform,"Close","VOLVER [TAB]",380,232,176,30,Toggle);
             candidate=Loadout[0];
             modal.SetActive(false);
             Refresh();
         }
-        private void Open(int slot) { selected=slot; candidate=Loadout[slot]; modal.SetActive(true); Refresh(); }
+        private void Open(int slot) { selected=slot; candidate=Loadout[slot]; modal.SetActive(true); modal.transform.SetAsLastSibling(); Refresh(); }
+        public void ResetLoadout()
+        {
+            for(var i=0;i<4;i++) Loadout.Equip(i,null);
+            var initial=new[]{0,1,8,14};for(var i=0;i<4;i++) Loadout.Equip(i,catalog[initial[i]]);
+            candidate=Loadout[selected];Refresh();
+        }
         public void Toggle() { if(IsOpen) modal.SetActive(false); else Open(selected); }
         private void Move(int direction)
         {
@@ -93,12 +101,12 @@ namespace DoubleDown.Presentation
         private void Refresh()
         {
             for(var i=0;i<4;i++) { labels[i].text=Loadout[i].displayName; icons[i].sprite=Loadout[i].icon; }
-            slotText.text=$"HUECO {selected+1}/4  |  ORDEN DE ARRIBA A ABAJO";
+            slotText.text=$"HUECO {selected+1}/4  |  ORDEN DE IZQUIERDA A DERECHA";
             details.text=candidate.displayName+": "+candidate.description+
-                (canEdit()?"":"\nTERMINA LA MANO PARA CAMBIAR RELIQUIAS.");
+                (!Owns(candidate.id)?"\nNO ADQUIRIDA: DISPONIBLE EN LA TIENDA.":canEdit()?"":"\nTERMINA LA MANO PARA CAMBIAR RELIQUIAS.");
             var duplicate=false;
             for(var i=0;i<4;i++) if(i!=selected && Loadout[i].id==candidate.id) duplicate=true;
-            equip.interactable=canEdit()&&!duplicate;
+            equip.interactable=canEdit()&&Owns(candidate.id)&&!duplicate;
         }
         private static GameObject Panel(Transform parent,string name,float x,float y,float w,float h,Color color)
         {

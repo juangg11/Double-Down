@@ -79,6 +79,8 @@ namespace DoubleDown.Tests
             Assert.AreEqual(ScoreRunState.Won, scoring.State);
             GameObject.Find("Blackjack HUD").transform.Find("Action Panel/Deal")
                 .GetComponent<Button>().onClick.Invoke();
+            Assert.IsTrue(Object.FindFirstObjectByType<RunShop>().IsOpen);
+            GameObject.Find("Run Shop").transform.Find("Continue").GetComponent<Button>().onClick.Invoke();
             Assert.AreEqual(2, scoring.Round);
             Assert.AreEqual(ScoreRunState.Playing, scoring.State);
         }

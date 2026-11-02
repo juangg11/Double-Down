@@ -64,15 +64,67 @@ namespace DoubleDown.Tests
                 .GetField("session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controller);
             session.Stand();
             while(session.Phase == DoubleDown.Blackjack.BlackjackPhase.DealerTurn) session.AdvanceDealerStep();
+            var shop=Object.FindFirstObjectByType<RunShop>();
+            var scoring = (DoubleDown.Scoring.ScoreRun)typeof(BlackjackTableController)
+                .GetField("scoreRun", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controller);
+            scoring.RecordDeal(new[] { new DoubleDown.Scoring.ScoreBreakdown(DoubleDown.Scoring.BigNumber.From(999), 1) });
+            GameObject.Find("Blackjack HUD").transform.Find("Action Panel/Deal").GetComponent<Button>().onClick.Invoke();
+            Assert.IsTrue(shop.IsOpen);
+            var purchased=shop.Economy.Offers[0];
+            GameObject.Find("Run Shop").transform.Find("Offer 0/Buy").GetComponent<Button>().onClick.Invoke();
+            Assert.IsTrue(shop.Economy.Owns(purchased));
             rack.Toggle();
-            body.Find("Relic 02").GetComponent<Button>().onClick.Invoke();
+            body.Find("Relic "+purchased).GetComponent<Button>().onClick.Invoke();
             body.Find("Equip").GetComponent<Button>().onClick.Invoke();
-            Assert.AreEqual("02",rack.Loadout[0].id);
+            Assert.AreEqual(purchased,rack.Loadout[0].id);
             body.Find("Down").GetComponent<Button>().onClick.Invoke();
-            Assert.AreEqual("02",rack.Loadout[1].id);
-            Capture("Phase5Relics.png");
+            Assert.AreEqual(purchased,rack.Loadout[1].id);
+            Capture("RelicsReorganized.png");
             rack.Toggle();
-            Capture("Phase5Preview.png");
+            yield return null;
+            Capture("Phase6Shop.png");
+            Assert.IsFalse(GameObject.Find("Run Shop").transform.Find("Offer 0/Buy").GetComponent<Button>().interactable);
+            GameObject.Find("Run Shop").transform.Find("Continue").GetComponent<Button>().onClick.Invoke();
+            yield return new WaitForSecondsRealtime(0.9f);
+            Capture("TableReorganized.png");
+        }
+
+        [UnityTest]
+        public IEnumerator SplitHandsRemainClearOfPermanentInterface()
+        {
+            SceneManager.LoadScene("BlackjackTable");
+            yield return new WaitForSecondsRealtime(0.3f);
+            var controller=Object.FindFirstObjectByType<BlackjackTableController>();
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+            var field=typeof(BlackjackTableController).GetField("session",flags);
+            var handler=(System.Action<DoubleDown.Blackjack.BlackjackEvent>)System.Delegate.CreateDelegate(
+                typeof(System.Action<DoubleDown.Blackjack.BlackjackEvent>),controller,
+                typeof(BlackjackTableController).GetMethod("OnGameEvent",flags));
+            ((DoubleDown.Blackjack.BlackjackSession)field.GetValue(controller)).EventRaised-=handler;
+            var cards=new[]{
+                new DoubleDown.Blackjack.PlayingCard(DoubleDown.Blackjack.CardSuit.Clubs,DoubleDown.Blackjack.CardRank.Eight),
+                new DoubleDown.Blackjack.PlayingCard(DoubleDown.Blackjack.CardSuit.Diamonds,DoubleDown.Blackjack.CardRank.Six),
+                new DoubleDown.Blackjack.PlayingCard(DoubleDown.Blackjack.CardSuit.Spades,DoubleDown.Blackjack.CardRank.Eight),
+                new DoubleDown.Blackjack.PlayingCard(DoubleDown.Blackjack.CardSuit.Hearts,DoubleDown.Blackjack.CardRank.Ten),
+                new DoubleDown.Blackjack.PlayingCard(DoubleDown.Blackjack.CardSuit.Clubs,DoubleDown.Blackjack.CardRank.Two),
+                new DoubleDown.Blackjack.PlayingCard(DoubleDown.Blackjack.CardSuit.Diamonds,DoubleDown.Blackjack.CardRank.Three)};
+            var session=new DoubleDown.Blackjack.BlackjackSession(new DoubleDown.Blackjack.BlackjackRules(startingBankroll:200),1,cards);
+            field.SetValue(controller,session);session.EventRaised+=handler;
+            session.StartRound(10);Assert.IsTrue(session.Split());
+            yield return new WaitForSecondsRealtime(0.9f);
+            foreach(var card in Object.FindObjectsByType<BlackjackCardVisual>(FindObjectsSortMode.None))
+            {
+                var bounds=card.GetComponent<SpriteRenderer>().bounds;
+                var rect=new Rect(bounds.min.x*64+320,180-bounds.max.y*64,bounds.size.x*64,bounds.size.y*64);
+                Assert.IsFalse(rect.Overlaps(TableLayout.RunRail));
+                Assert.IsFalse(rect.Overlaps(TableLayout.Relics));
+                Assert.IsFalse(rect.Overlaps(TableLayout.Actions));
+            }
+            Capture("SplitReorganized.png");
+            var totals = GameObject.Find("Blackjack HUD").transform.Find("Player Total").GetComponent<Text>();
+            StringAssert.Contains("MANO 1  10\nTU TURNO", totals.text);
+            session.Stand();
+            StringAssert.Contains("MANO 2  11\nTU TURNO", totals.text);
         }
 
         private static void Capture(string filename)

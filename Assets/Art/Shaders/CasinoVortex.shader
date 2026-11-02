@@ -94,7 +94,7 @@ Shader "DoubleDown/CasinoVortex"
                 colour = floor(colour * 24.0 + 0.5) / 24.0;
                 colour = lerp(colour, colour * half3(1.22, 0.88, 0.65), max(0, _State) * 0.35);
                 colour = lerp(colour, colour * half3(0.65, 0.70, 0.88), max(0, -_State) * 0.55);
-                return half4(colour, 1.0);
+                return half4(colour * 0.60, 1.0);
             }
             ENDHLSL
         }

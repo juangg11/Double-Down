@@ -15,9 +15,17 @@ namespace DoubleDown.Tests
         public IEnumerator SandboxDealsSevenFaceUpCards()
         {
             SceneManager.LoadScene("FeelSandbox");
-            yield return new WaitForSecondsRealtime(1.5f);
-
+            yield return null;
             var cards = UnityEngine.Object.FindObjectsByType<FeelCardView>(FindObjectsSortMode.None);
+            // Animation advances with a capped delta; a wall-clock delay can finish mid-flip in batch mode.
+            var deadline = Time.realtimeSinceStartup + 6f;
+            while (Time.realtimeSinceStartup < deadline &&
+                (cards.Length != 7 || cards.Any(card => !card.IsFaceUp || card.IsDealing ||
+                    Mathf.Abs(card.transform.Find("Visual").localScale.x - 2f) > 0.02f)))
+            {
+                yield return null;
+                cards = UnityEngine.Object.FindObjectsByType<FeelCardView>(FindObjectsSortMode.None);
+            }
             Assert.AreEqual(7, cards.Length);
             foreach (var card in cards)
             {

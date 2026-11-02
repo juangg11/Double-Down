@@ -13,3 +13,7 @@
 | 2026-11-01 | Ases divididos reciben una carta y el 21 dividido no es blackjack natural | Regla explícita para evitar pagos 3:2 inesperados tras dividir. |
 | 2026-11-01 | Canvas de la mesa en espacio mundo a 640×360 | Alinea TextMeshPro y botones con la cámara Pixel Perfect y las barras laterales. |
 | 2026-11-01 | TextMeshPro Essentials oficial incluido en el repositorio | La mesa abre con fuente y materiales resueltos sin importar assets manualmente. |
+| 2026-11-02 | Reorganizar la mesa en columna de run, fila de reliquias, dos bandas de cartas y acciones inferiores | Corrección solicitada por el usuario para eliminar solapamientos; las manos divididas conservan grupos separados. |
+| 2026-11-02 | Tienda sustituye la zona central entre rondas | Evita apilar otro panel sobre las cartas; mantiene visibles oro y build. |
+| 2026-11-02 | Oro separado de las fichas de apuesta; cuatro reliquias iniciales | Conserva las reglas de blackjack y la build inicial mientras se introduce adquisición real; balance provisional configurable. |
+| 2026-11-02 | Renovación 2, 3, 4... por tienda; premio por manos restantes | Implementa coste creciente y recompensa de eficiencia; valores en EconomyBalance.asset. |
