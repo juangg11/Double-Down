@@ -31,11 +31,13 @@ namespace DoubleDown.Presentation
             if (balance == null) throw new InvalidOperationException("EconomyBalance asset is missing.");
             Economy=new RunEconomy(catalog.Select(r=>r.id),seed,balance.ToRules());
             root=Panel(canvas.transform,"Run Shop",172,92,456,260,new Color(0.018f,0.04f,0.06f));
+            CasinoUiSkin.Surface(root.GetComponent<Image>(), "Frame", CasinoUiSkin.Ink);
             heading=Text(root.transform,"Heading","",12,8,432,22);
             for(var i=0;i<3;i++)
             {
                 var index=i;
                 var card=Panel(root.transform,"Offer "+i,12+i*146,36,140,150,new Color(0.04f,0.12f,0.15f));
+                CasinoUiSkin.Surface(card.GetComponent<Image>(), "Frame", CasinoUiSkin.Felt);
                 icons[i]=Panel(card.transform,"Icon",58,6,24,24,Color.white).GetComponent<Image>();
                 names[i]=Text(card.transform,"Name","",6,34,128,32);names[i].alignment=TextAnchor.MiddleCenter;
                 descriptions[i]=Text(card.transform,"Effect","",6,68,128,48);
@@ -78,17 +80,18 @@ namespace DoubleDown.Presentation
         {
             var go=new GameObject(name,typeof(RectTransform),typeof(Text));go.transform.SetParent(parent,false);
             Set(go.GetComponent<RectTransform>(),x,y,w,h);var text=go.GetComponent<Text>();
-            text.font=font;text.fontSize=16;text.text=content;text.color=new Color(1f,0.81f,0.48f);text.raycastTarget=false;return text;
+            text.font=font;text.material=Graphic.defaultGraphicMaterial;text.fontSize=16;text.text=content;text.color=new Color(1f,0.81f,0.48f);text.raycastTarget=false;return text;
         }
         private Button Button(Transform parent,string name,string label,float x,float y,float w,float h,UnityEngine.Events.UnityAction action)
         {
             var shadow=Panel(parent,name+" Shadow",x+2,y+3,w,h,new Color(0.006f,0.015f,0.025f)).GetComponent<Image>();shadow.raycastTarget=false;
             var go=Panel(parent,name,x,y,w,h,new Color(0.12f,0.29f,0.3f));go.AddComponent<CanvasGroup>();
             var button=go.AddComponent<Button>();button.targetGraphic=go.GetComponent<Image>();button.transition=Selectable.Transition.None;
-            var shine=Panel(go.transform,"Shine",2,2,w-4,h-4,Color.clear).GetComponent<Image>();shine.raycastTarget=false;
+            CasinoUiSkin.Surface(go.GetComponent<Image>(), "Button", CasinoUiSkin.Felt);
+            CasinoUiSkin.Surface(shadow, "Button", CasinoUiSkin.Ink);
             Text(go.transform,"Label",label,2,0,w-4,h).alignment=TextAnchor.MiddleCenter;
             button.onClick.AddListener(action);
-            go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(),shine,shadow,GetComponent<AudioSource>(),Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
+            go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(),shadow,GetComponent<AudioSource>(),Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
             return button;
         }
         private static void Set(RectTransform rect,float x,float y,float w,float h)

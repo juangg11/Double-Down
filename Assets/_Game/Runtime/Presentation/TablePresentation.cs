@@ -37,11 +37,14 @@ namespace DoubleDown.Presentation
                 overlay.GetComponent<Image>().raycastTarget = false;
             }
             var hint = Label(canvas.transform, "Settings Hint", "ESC  AJUSTES", 20, 336, 124, 16);
-            hint.color = new Color(0.55f, 0.82f, 0.87f);
+            hint.color = CasinoUiSkin.Muted;
+            hint.alignment = TextAnchor.MiddleCenter;
+            hint.fontSize = 12;
             drawer = Panel(canvas.transform, "Presentation Settings", 0, 0, 640, 360,
                 new Color(0f, 0f, 0f, 0.65f));
             var body = Panel(drawer.transform, "Settings Body", 120, 62, 400, 236,
                 new Color(0.018f, 0.035f, 0.06f, 0.99f));
+            CasinoUiSkin.Surface(body.GetComponent<Image>(), "Frame", CasinoUiSkin.Ink);
             Label(body.transform, "Heading", "AJUSTES DE LA MESA", 20, 14, 360, 30).fontSize = 24;
             values = Label(body.transform, "Values", "", 22, 50, 350, 90);
             Button(body.transform, "CRT", "CRT +", 20, 144, () => { crt = Step(crt); Apply(); });
@@ -97,7 +100,7 @@ namespace DoubleDown.Presentation
             go.transform.SetParent(parent, false);
             Rect(go.GetComponent<RectTransform>(), x, y, w, h);
             var text = go.GetComponent<Text>();
-            text.font = font; text.fontSize = 16; text.text = content;
+            text.font = font; text.material = Graphic.defaultGraphicMaterial; text.fontSize = 16; text.text = content;
             text.color = new Color(1f, 0.81f, 0.48f); text.raycastTarget = false;
             return text;
         }
@@ -113,12 +116,11 @@ namespace DoubleDown.Presentation
             button.transition = Selectable.Transition.None;
             button.targetGraphic = go.GetComponent<Image>();
             button.onClick.AddListener(action);
-            var shine = Panel(go.transform, "Shine", 2, 2, width - 4, 26, Color.clear).GetComponent<Image>();
-            shine.raycastTarget = false;
+            CasinoUiSkin.Surface(go.GetComponent<Image>(), "Button", CasinoUiSkin.Felt);
+            CasinoUiSkin.Surface(shadow, "Button", CasinoUiSkin.Ink);
             var label = Label(go.transform, "Label", content, 2, 0, width - 4, 30);
             label.alignment = TextAnchor.MiddleCenter;
-            go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), shine,
-                shadow, GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
+            go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), shadow, GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
         }
         private static void Rect(RectTransform rect, float x, float y, float w, float h)
         {

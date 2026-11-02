@@ -14,7 +14,6 @@ namespace DoubleDown.Presentation
         public bool IsOpen => modal != null && modal.activeSelf;
         private readonly Text[] labels = new Text[4];
         private readonly Image[] icons = new Image[4];
-        private readonly Image[] faces = new Image[4];
         private readonly Queue<int> activations = new Queue<int>();
         private RelicDefinition[] catalog;
         private RelicDefinition candidate;
@@ -42,12 +41,12 @@ namespace DoubleDown.Presentation
                 var button=Button(canvas.transform,"Relic Slot "+i,"",180+i*112,20,100,64,()=>Open(slot));
                 labels[i]=Text(button.transform,"Name","",4,30,92,32);
                 labels[i].alignment=TextAnchor.MiddleCenter;
-                faces[i]=button.GetComponent<Image>();
-                icons[i]=Panel(button.transform,"Icon",38,5,24,24,Color.white).GetComponent<Image>();
+                icons[i]=Panel(button.transform,"Icon",38,5,24,24,CasinoUiSkin.Paper).GetComponent<Image>();
                 icons[i].raycastTarget=false;
             }
             modal=Panel(canvas.transform,"Relic Collection",0,0,640,360,new Color(0,0,0,0.8f));
-            var body=Panel(modal.transform,"Body",34,42,572,278,new Color(0.018f,0.04f,0.065f));
+            var body=Panel(modal.transform,"Body",34,42,572,278,CasinoUiSkin.Ink);
+            CasinoUiSkin.Surface(body.GetComponent<Image>(), "Frame", CasinoUiSkin.Felt);
             slotText=Text(body.transform,"Slot","",12,10,540,20);
             for(var i=0;i<catalog.Length;i++)
             {
@@ -91,11 +90,13 @@ namespace DoubleDown.Presentation
             if(Keyboard.current!=null && Keyboard.current.tabKey.wasPressedThisFrame &&
                 !(GetComponent<TablePresentation>()?.IsOpen ?? false)) Toggle();
             timer-=Time.unscaledDeltaTime;
+            if(glowing>=0 && !TablePresentation.ReducedMotion)
+                icons[glowing].rectTransform.anchoredPosition=new Vector2(38,-5+Mathf.Round(Mathf.Sin(Mathf.Clamp01(timer/0.22f)*Mathf.PI)*2f));
             if(timer<=0)
             {
-                if(glowing>=0) { labels[glowing].color=new Color(1f,0.81f,0.48f); faces[glowing].color=new Color(0.06f,0.16f,0.19f); }
+                if(glowing>=0) icons[glowing].rectTransform.anchoredPosition=new Vector2(38,-5);
                 glowing=activations.Count>0?activations.Dequeue():-1;
-                if(glowing>=0) { labels[glowing].color=Color.white; faces[glowing].color=new Color(0.3f,0.43f,0.24f); timer=0.22f; }
+                if(glowing>=0) timer=0.22f;
             }
         }
         private void Refresh()
@@ -120,15 +121,18 @@ namespace DoubleDown.Presentation
             var go=new GameObject(name,typeof(RectTransform),typeof(Text));go.transform.SetParent(parent,false);
             var rect=go.GetComponent<RectTransform>();rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(0,1);
             rect.anchoredPosition=new Vector2(x,-y);rect.sizeDelta=new Vector2(w,h);
-            var text=go.GetComponent<Text>();text.font=font;text.fontSize=16;text.text=value;
-            text.color=new Color(1f,0.81f,0.48f);text.raycastTarget=false;return text;
+            var text=go.GetComponent<Text>();text.font=font;text.material=Graphic.defaultGraphicMaterial;text.fontSize=16;text.text=value;
+            text.color=CasinoUiSkin.Paper;text.raycastTarget=false;return text;
         }
         private Button Button(Transform parent,string name,string value,float x,float y,float w,float h,UnityEngine.Events.UnityAction action)
         {
             var go=Panel(parent,name,x,y,w,h,new Color(0.06f,0.16f,0.19f));
+            CasinoUiSkin.Surface(go.GetComponent<Image>(), "Button", CasinoUiSkin.Felt);
+            go.AddComponent<CanvasGroup>();
             var button=go.AddComponent<Button>();button.targetGraphic=go.GetComponent<Image>();button.onClick.AddListener(action);
+            button.transition=Selectable.Transition.None;
             var sound=Resources.Load<AudioClip>("TablePresentation/Audio/click3");
-            button.onClick.AddListener(()=>{var audio=GetComponent<AudioSource>();if(audio!=null && sound!=null) audio.PlayOneShot(sound,0.35f);});
+            go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(),null,GetComponent<AudioSource>(),sound);
             var label=Text(go.transform,"Label",value,2,0,w-4,h);label.alignment=TextAnchor.MiddleCenter;
             return button;
         }

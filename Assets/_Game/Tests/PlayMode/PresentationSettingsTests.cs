@@ -64,6 +64,7 @@ namespace DoubleDown.Tests
                 .GetField("session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controller);
             session.Stand();
             while(session.Phase == DoubleDown.Blackjack.BlackjackPhase.DealerTurn) session.AdvanceDealerStep();
+            yield return new WaitForSecondsRealtime(0.9f);
             var shop=Object.FindFirstObjectByType<RunShop>();
             var scoring = (DoubleDown.Scoring.ScoreRun)typeof(BlackjackTableController)
                 .GetField("scoreRun", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controller);
@@ -79,9 +80,10 @@ namespace DoubleDown.Tests
             Assert.AreEqual(purchased,rack.Loadout[0].id);
             body.Find("Down").GetComponent<Button>().onClick.Invoke();
             Assert.AreEqual(purchased,rack.Loadout[1].id);
+            yield return new WaitForSecondsRealtime(0.3f);
             Capture("RelicsReorganized.png");
             rack.Toggle();
-            yield return null;
+            yield return new WaitForSecondsRealtime(0.3f);
             Capture("Phase6Shop.png");
             Assert.IsFalse(GameObject.Find("Run Shop").transform.Find("Offer 0/Buy").GetComponent<Button>().interactable);
             GameObject.Find("Run Shop").transform.Find("Continue").GetComponent<Button>().onClick.Invoke();
@@ -139,8 +141,8 @@ namespace DoubleDown.Tests
             var picture = new Texture2D(640, 360, TextureFormat.RGB24, false);
             try
             {
-                Canvas.ForceUpdateCanvases();
                 camera.targetTexture = target;
+                Canvas.ForceUpdateCanvases();
                 camera.Render();
                 RenderTexture.active = target;
                 picture.ReadPixels(new Rect(0, 0, 640, 360), 0, 0);

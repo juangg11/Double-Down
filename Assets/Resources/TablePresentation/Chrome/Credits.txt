@@ -1,0 +1,5 @@
+Complete UI Essential Pack Free — Crusenho Agus Hennihuno
+Source: https://crusenho.itch.io
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+Included originals: UI_Flat_Frame01a.png, UI_Flat_Button01a_1.png, UI_Flat_Banner03a.png, UI_Flat_Bar01a.png.
+PNG pixels are unchanged. Renamed for use in DOUBLE DOWN; runtime tinting and nine-slice sizing are applied.

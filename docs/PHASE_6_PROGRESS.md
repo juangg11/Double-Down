@@ -1,5 +1,7 @@
 # Mesa reorganizada y Fase 6 en curso
 
+La revisión posterior del lateral y los botones está documentada en [UI_POLISH.md](UI_POLISH.md), con los nuevos assets y sus créditos.
+
 ## Distribución revisada
 
 La mesa usa una cuadrícula lógica de 640×360. La columna izquierda reúne ronda, meta, puntuación, manos, fichas, oro y apuesta. Las cuatro reliquias ocupan una fila superior y se resuelven de izquierda a derecha. La banca y el jugador tienen dos bandas independientes; las acciones permanecen en la banda inferior. Se retiraron las indicaciones de teclado duplicadas y se redujo la luminosidad del fondo procedural para mejorar el contraste.

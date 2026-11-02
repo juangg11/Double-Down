@@ -43,6 +43,7 @@ namespace DoubleDown.Presentation
         private int usedCards;
         private float dealerTimer;
         private Text bankrollText;
+        private Text goldText;
         private Text wagerText;
         private Text roundText;
         private Text messageText;
@@ -69,8 +70,6 @@ namespace DoubleDown.Presentation
         private Button insuranceButton;
         private Button declineButton;
 
-        private static readonly Color Panel = new Color(0.018f, 0.039f, 0.070f, 0.96f);
-        private static readonly Color PanelSoft = new Color(0.025f, 0.075f, 0.105f, 0.94f);
         private static readonly Color Gold = new Color(0.98f, 0.73f, 0.38f, 1f);
         private static readonly Color Cyan = new Color(0.54f, 0.84f, 0.91f, 1f);
 
@@ -264,7 +263,7 @@ namespace DoubleDown.Presentation
             var ratio = amount.IsZero ? 0d : amount >= scoreRun.Goal ? 1d :
                 amount.Mantissa / scoreRun.Goal.Mantissa *
                 Math.Pow(10d, amount.Exponent - scoreRun.Goal.Exponent);
-            scoreFill.sizeDelta = new Vector2(Mathf.Round(116f * (float)ratio), 4f);
+            scoreFill.sizeDelta = new Vector2(Mathf.Round(100f * (float)ratio), 4f);
         }
 
         private void PlaySound(AudioClip clip, float minPitch, float maxPitch)
@@ -328,10 +327,11 @@ namespace DoubleDown.Presentation
         private void RefreshHud()
         {
             if (bankrollText == null) return;
-            bankrollText.text = $"FICHAS {session.Bankroll:N0}\nORO {shop.Economy.Gold}";
+            bankrollText.text = BigNumber.From(session.Bankroll).ToString();
+            goldText.text = shop.Economy.Gold.ToString();
             wagerText.text = (session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled
                 ? selectedWager : session.Wager).ToString("N0");
-            roundText.text = $"RONDA {scoreRun.Round:00}";
+            roundText.text = $"RONDA    {scoreRun.Round:00}";
             messageText.text = scoreRun.State == ScoreRunState.Won ? "META COMPLETA!\nSIGUIENTE RONDA"
                 : scoreRun.State == ScoreRunState.Lost ? "SIN MANOS.\nREINTENTA LA RUN"
                 : session.Phase == BlackjackPhase.PlayerTurn ? "PIDE O\nPLANTATE."
@@ -429,28 +429,49 @@ namespace DoubleDown.Presentation
             canvasRect.position = new Vector3(-5f, 2.8125f, -1f);
             canvasRect.localScale = Vector3.one / 64f;
 
-            var rail = MakePanel(canvas.transform, "Run Rail", 8, 8, 148, 344, Panel);
-            var top = MakePanel(canvas.transform, "Top Bar", 14, 14, 136, 46, Panel);
-            MakeText(top.transform, "Title", "DOUBLE DOWN", 4, 0, 128, 30, 24, Gold);
-            MakeText(top.transform, "Rule", "BLACKJACK / 3:2 / S17", 4, 30, 128, 16, 12, Cyan);
-            roundText = MakeText(canvas.transform, "Round", "RONDA 01", 20, 72, 124, 20, 16, Gold);
+            MakePanel(canvas.transform, "Run Rail", 8, 8, 148, 344, CasinoUiSkin.Felt);
+            var top = MakePanel(canvas.transform, "Top Bar", 16, 12, 132, 48, Color.clear);
+            MakeIcon(top.transform, "Crown", "crown_b", 8, 12, 24, CasinoUiSkin.Paper);
+            MakeText(top.transform, "Title", "DOUBLE DOWN", 44, 0, 84, 48, 24, CasinoUiSkin.Paper);
+            var roundBadge = MakePanel(canvas.transform, "Round Badge", 20, 66, 124, 24, CasinoUiSkin.Red);
+            CasinoUiSkin.Surface(roundBadge, "Banner", CasinoUiSkin.Red);
+            roundText = MakeText(roundBadge.transform, "Round", "", 6, 0, 112, 24, 16, CasinoUiSkin.Paper);
+            roundText.alignment = TextAnchor.MiddleCenter;
 
-            var meter = MakePanel(canvas.transform, "Score Meter", 18, 100, 128, 108, PanelSoft);
+            var meter = MakePanel(canvas.transform, "Score Meter", 20, 98, 124, 106, CasinoUiSkin.Ink);
             scorePanel = meter.GetComponent<RectTransform>();
-            MakeStripe(meter.transform, "Accent", 0, 0, 128, 3, Gold);
-            goalText = MakeText(meter.transform, "Goal", "", 8, 10, 112, 18, 16, Gold);
-            scoreText = MakeText(meter.transform, "Score", "0", 8, 28, 112, 30, 24, Color.white);
-            handsText = MakeText(meter.transform, "Hands", "", 8, 58, 112, 18, 16, Cyan);
-            MakeStripe(meter.transform, "Progress Track", 6, 78, 116, 3, new Color(0.1f,0.2f,0.24f));
-            scoreFill = MakeStripe(meter.transform, "Progress Fill", 6, 78, 0, 3, Gold).GetComponent<RectTransform>();
-            formulaText = MakeText(meter.transform, "Formula", "FICHAS x MULT", 8, 87, 112, 18, 16, Gold);
-            bankrollText = MakeText(canvas.transform, "Bankroll", "", 20, 214, 124, 34, 16, Color.white);
-            MakeText(canvas.transform, "Wager Label", "APUESTA", 20, 248, 124, 16, 16, Cyan);
-            minusButton = MakeButton(canvas.transform, "Less Bet", "-", 20, 264, 28, 26, ()=>ChangeWager(-1));
-            wagerText = MakeText(canvas.transform, "Wager", "10", 50, 264, 60, 26, 16, Gold);
+            goalText = MakeText(meter.transform, "Goal", "", 8, 6, 108, 18, 16, CasinoUiSkin.Muted);
+            goalText.alignment = TextAnchor.MiddleCenter;
+            scoreText = MakeText(meter.transform, "Score", "0", 8, 24, 108, 34, 32, CasinoUiSkin.Paper);
+            scoreText.alignment = TextAnchor.MiddleCenter;
+            var progressTrack = MakeStripe(meter.transform, "Progress Track", 12, 62, 100, 4, CasinoUiSkin.Felt);
+            CasinoUiSkin.Surface(progressTrack, "Progress", CasinoUiSkin.Felt);
+            scoreFill = MakeStripe(meter.transform, "Progress Fill", 12, 62, 0, 4, Gold).GetComponent<RectTransform>();
+            CasinoUiSkin.Surface(scoreFill.GetComponent<Image>(), "Progress", Gold);
+            MakeIcon(meter.transform, "Hand Icon", "cards_stack", 12, 73, 12, CasinoUiSkin.Muted);
+            handsText = MakeText(meter.transform, "Hands", "", 30, 70, 86, 18, 16, CasinoUiSkin.Muted);
+            formulaText = MakeText(meter.transform, "Formula", "FICHAS x MULT", 8, 90, 108, 14, 12, Gold);
+            formulaText.alignment = TextAnchor.MiddleCenter;
+
+            var chips = MakePanel(canvas.transform, "Chips Wallet", 20, 212, 60, 44, CasinoUiSkin.Ink);
+            MakeIcon(chips.transform, "Icon", "tokens", 6, 5, 12, CasinoUiSkin.Muted);
+            MakeText(chips.transform, "Caption", "FICHAS", 22, 3, 34, 14, 12, CasinoUiSkin.Muted);
+            bankrollText = MakeText(chips.transform, "Bankroll", "", 4, 18, 52, 24, 24, CasinoUiSkin.Paper);
+            bankrollText.alignment = TextAnchor.MiddleCenter;
+            var wallet = MakePanel(canvas.transform, "Gold Wallet", 84, 212, 60, 44, CasinoUiSkin.Ink);
+            MakeIcon(wallet.transform, "Icon", "token", 6, 5, 12, Gold);
+            MakeText(wallet.transform, "Caption", "ORO", 22, 3, 34, 14, 12, Gold);
+            goldText = MakeText(wallet.transform, "Gold", "", 4, 18, 52, 24, 24, Gold);
+            goldText.alignment = TextAnchor.MiddleCenter;
+
+            var betCaption = MakeText(canvas.transform, "Wager Label", "APUESTA", 52, 264, 60, 14, 12, CasinoUiSkin.Muted);
+            betCaption.alignment = TextAnchor.MiddleCenter;
+            minusButton = MakeButton(canvas.transform, "Less Bet", "-", 20, 274, 28, 26, ()=>ChangeWager(-1));
+            wagerText = MakeText(canvas.transform, "Wager", "10", 52, 278, 60, 24, 24, CasinoUiSkin.Paper);
             wagerText.alignment = TextAnchor.MiddleCenter;
-            plusButton = MakeButton(canvas.transform, "More Bet", "+", 114, 264, 28, 26, ()=>ChangeWager(1));
-            messageText = MakeText(canvas.transform, "Message", "", 20, 300, 124, 32, 16, Color.white);
+            plusButton = MakeButton(canvas.transform, "More Bet", "+", 116, 274, 28, 26, ()=>ChangeWager(1));
+            messageText = MakeText(canvas.transform, "Message", "", 20, 310, 124, 24, 12, CasinoUiSkin.Muted);
+            messageText.alignment = TextAnchor.MiddleCenter;
 
             var side = MakePanel(canvas.transform, "Action Panel", 176, 308, 448, 40, Color.clear);
             hitButton = MakeButton(side.transform, "Hit", "PEDIR [H]", 4, 0, 100, 34, ()=>session.Hit(), true);
@@ -482,18 +503,15 @@ namespace DoubleDown.Presentation
             var image = panel.GetComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
-            if (width > 8 && height > 8 && color.a > 0f)
-            {
-                MakeStripe(panel.transform, "Top edge", 0, 0, width, 2,
-                    new Color(0.28f, 0.52f, 0.58f, 0.65f));
-                MakeStripe(panel.transform, "Left edge", 0, 0, 2, height,
-                    new Color(0.19f, 0.38f, 0.44f, 0.65f));
-                MakeStripe(panel.transform, "Bottom edge", 0, height - 3, width, 3,
-                    new Color(0.006f, 0.016f, 0.03f, 0.95f));
-                MakeStripe(panel.transform, "Right edge", width - 3, 0, 3, height,
-                    new Color(0.006f, 0.016f, 0.03f, 0.95f));
-            }
+            if (color.a > 0f) CasinoUiSkin.Surface(image, "Frame", color);
             return image;
+        }
+
+        private static void MakeIcon(Transform parent, string name, string asset, float x, float y, float size, Color tint)
+        {
+            var icon = MakeStripe(parent, name, x, y, size, size, tint);
+            icon.sprite = Resources.Load<Sprite>("TablePresentation/Icons/" + asset);
+            icon.preserveAspect = true;
         }
 
         private static Image MakeStripe(Transform parent, string name, float x, float y,
@@ -516,6 +534,7 @@ namespace DoubleDown.Presentation
             SetRect(label.GetComponent<RectTransform>(), x, y, width, height);
             var text = label.GetComponent<Text>();
             text.font = fontAsset;
+            text.material = Graphic.defaultGraphicMaterial;
             text.fontSize = Mathf.RoundToInt(size);
             text.fontStyle = FontStyle.Normal;
             text.color = color;
@@ -536,21 +555,15 @@ namespace DoubleDown.Presentation
             buttonObject.transform.SetParent(parent, false);
             SetRect(buttonObject.GetComponent<RectTransform>(), x, y, width, height);
             var image = buttonObject.GetComponent<Image>();
-            image.color = primary ? new Color(0.65f, 0.20f, 0.24f, 1f)
-                : new Color(0.075f, 0.20f, 0.24f, 1f);
-            MakeStripe(buttonObject.transform, "Upper bevel", 0, 0, width, 3,
-                primary ? new Color(1f, 0.60f, 0.40f, 1f) : new Color(0.38f, 0.70f, 0.70f, 1f));
-            MakeStripe(buttonObject.transform, "Lower bevel", 0, height - 4, width, 4,
-                new Color(0.008f, 0.025f, 0.045f, 0.85f));
-            var shine = MakeStripe(buttonObject.transform, "Hover shine", 4, 4,
-                width - 8, height - 10, Color.clear);
+            CasinoUiSkin.Surface(image, "Button", primary ? CasinoUiSkin.Red : CasinoUiSkin.Felt);
+            CasinoUiSkin.Surface(shadow, "Button", CasinoUiSkin.Ink);
             var button = buttonObject.GetComponent<Button>();
             button.transition = Selectable.Transition.None;
             button.onClick.AddListener(action);
             var text = MakeText(buttonObject.transform, "Label", label, 2, 4,
                 width - 4, height - 7, 16, Color.white, true);
             text.alignment = TextAnchor.MiddleCenter;
-            buttonObject.GetComponent<ArcadeButtonFeel>().Initialize(image, shine, shadow,
+            buttonObject.GetComponent<ArcadeButtonFeel>().Initialize(image, shadow,
                 audioSource, Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
             return button;
         }

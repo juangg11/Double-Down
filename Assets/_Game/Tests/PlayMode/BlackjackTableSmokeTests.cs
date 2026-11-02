@@ -86,22 +86,27 @@ namespace DoubleDown.Tests
         }
 
         [UnityTest]
-        public IEnumerator ButtonsLiftOnHoverAndDepressOnPointerDown()
+        public IEnumerator ButtonsMoveWithoutBrighteningOnHoverAndPress()
         {
             SceneManager.LoadScene("BlackjackTable");
             yield return new WaitForSecondsRealtime(0.2f);
             var panel = GameObject.Find("Blackjack HUD").transform.Find("Action Panel");
             var hit = panel.Find("Hit").gameObject;
             var rect = hit.GetComponent<RectTransform>();
+            var restingColor = hit.GetComponent<Image>().color;
+            var restingY = rect.anchoredPosition.y;
             var pointer = new PointerEventData(EventSystem.current);
             ExecuteEvents.Execute<IPointerEnterHandler>(hit, pointer, ExecuteEvents.pointerEnterHandler);
             yield return new WaitForSecondsRealtime(0.12f);
             var hoverY = rect.anchoredPosition.y;
-            var hoverScale = rect.localScale.x;
-            Assert.Greater(hoverScale, 1f);
+            Assert.Greater(hoverY, restingY);
+            Assert.AreEqual(Vector3.one, rect.localScale);
+            Assert.AreEqual(restingColor, hit.GetComponent<Image>().color);
+            Assert.IsNull(hit.transform.Find("Hover shine"));
             ExecuteEvents.Execute<IPointerDownHandler>(hit, pointer, ExecuteEvents.pointerDownHandler);
             yield return new WaitForSecondsRealtime(0.12f);
-            Assert.Less(rect.localScale.x, hoverScale);
+            Assert.AreEqual(Vector3.one, rect.localScale);
+            Assert.AreEqual(restingColor, hit.GetComponent<Image>().color);
             Assert.Less(rect.anchoredPosition.y, hoverY);
             var split = panel.Find("Split").GetComponent<CanvasGroup>();
             Assert.Less(split.alpha, 0.5f);
