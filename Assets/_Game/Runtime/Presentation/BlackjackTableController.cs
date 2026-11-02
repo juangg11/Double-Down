@@ -33,6 +33,8 @@ namespace DoubleDown.Presentation
         private ScoreRun scoreRun;
         private ScoreRules scoreRules;
         private AudioSource audioSource;
+        private TablePresentation presentation;
+        private AudioClip scoreSound;
         private Material backdropMaterial;
         private long selectedWager;
         private int usedCards;
@@ -90,6 +92,7 @@ namespace DoubleDown.Presentation
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f;
+            scoreSound = Resources.Load<AudioClip>("TablePresentation/Audio/switch7");
             var backdrop = GameObject.Find("Casino Vortex (Shader)");
             if (backdrop != null) backdropMaterial = backdrop.GetComponent<MeshRenderer>().material;
             BuildHud();
@@ -101,10 +104,12 @@ namespace DoubleDown.Presentation
         private void OnDestroy()
         {
             if (session != null) session.EventRaised -= OnGameEvent;
+            if (backdropMaterial != null) Destroy(backdropMaterial);
         }
 
         private void Update()
         {
+            if (presentation != null && presentation.IsOpen) return;
             HandleKeyboard();
             if (session.Phase == BlackjackPhase.DealerTurn)
             {
@@ -175,7 +180,7 @@ namespace DoubleDown.Presentation
 
         private void OnGameEvent(BlackjackEvent gameEvent)
         {
-            if (gameEvent.Type == BlackjackEventType.RoundStarted) RecycleCards();
+            if (gameEvent.Type == BlackjackEventType.RoundStarted) { RecycleCards(); if (backdropMaterial != null) backdropMaterial.SetFloat("_State", 0f); }
             if (gameEvent.Type == BlackjackEventType.CardDealt) PlaySound(dealSound, 0.91f, 1.08f);
             if (gameEvent.Type == BlackjackEventType.HoleRevealed) PlaySound(flipSound, 1f, 1f);
             if (gameEvent.Type == BlackjackEventType.RoundSettled) PlaySound(selectSound, 0.95f, 1.05f);
@@ -200,6 +205,13 @@ namespace DoubleDown.Presentation
             scoreAnimation = scoreGain.IsZero ? 1f : 0f;
             scoreTick = 0;
             scorePulse = scoreGain.IsZero ? 0.25f : 1f;
+            foreach (var hand in session.Hands)
+                foreach (var card in hand.Cards)
+                    if (visibleCards.TryGetValue(card, out var visual))
+                        visual.SetEdition(hand.Outcome == HandOutcome.Blackjack ? 2f :
+                            hand.Outcome == HandOutcome.Win ? 1f : 0f);
+            if (backdropMaterial != null) backdropMaterial.SetFloat("_State",
+                scoreRun.State == ScoreRunState.Won ? 1f : scoreRun.State == ScoreRunState.Lost ? -1f : 0f);
             var first = hands[0];
             formulaText.text = first.Chips + " x " + first.Multiplier.ToString("0.#") +
                 " = " + scoreGain;
@@ -217,14 +229,14 @@ namespace DoubleDown.Presentation
                 if (nextTick > scoreTick)
                 {
                     scoreTick = nextTick;
-                    PlaySound(selectSound, 0.90f + nextTick * 0.10f,
+                    PlaySound(scoreSound, 0.90f + nextTick * 0.10f,
                         0.93f + nextTick * 0.10f);
                 }
             }
             if (scorePanel != null)
-                scorePanel.localScale = Vector3.one * (1f + scorePulse * 0.035f);
+                scorePanel.localScale = Vector3.one * (1f + (TablePresentation.ReducedMotion ? 0f : scorePulse * 0.035f * TablePresentation.EffectStrength));
             if (backdropMaterial != null)
-                backdropMaterial.SetFloat("_Pulse", scorePulse * 0.8f);
+                backdropMaterial.SetFloat("_Pulse", scorePulse * 0.8f * TablePresentation.EffectStrength);
         }
 
         private void DrawScore(BigNumber amount)
@@ -446,6 +458,20 @@ namespace DoubleDown.Presentation
             scoreFill = MakeStripe(meter.transform, "Progress Fill", 7, 74, 0, 4, Gold)
                 .GetComponent<RectTransform>();
             formulaText = MakeText(meter.transform, "Formula", "FICHAS x MULT", 7, 82, 116, 18, 16, Gold);
+            var token = MakeStripe(side.transform, "Bankroll Icon", 147, 43, 24, 24, Gold);
+            token.sprite = Resources.Load<Sprite>("TablePresentation/Icons/tokens");
+            token.preserveAspect = true;
+            var keyNames = new[] { "H", "S", "D", "P" };
+            for (var i = 0; i < keyNames.Length; i++)
+            {
+                var key = MakeStripe(canvas.transform, "Key " + keyNames[i], 16 + i * 36, 320, 32, 32, Color.white);
+                key.sprite = Resources.Load<Sprite>("TablePresentation/Keys/" + keyNames[i]);
+                key.preserveAspect = true;
+                key.gameObject.AddComponent<KeycapHint>().Initialize(key, key.sprite,
+                    (Key)Enum.Parse(typeof(Key), keyNames[i]));
+            }
+            presentation = gameObject.AddComponent<TablePresentation>();
+            presentation.Initialize(canvas, fontAsset, backdropMaterial);
         }
 
         private static Image MakePanel(Transform parent, string name, float x, float y,
@@ -526,7 +552,7 @@ namespace DoubleDown.Presentation
                 width - 4, height - 7, 16, Color.white, true);
             text.alignment = TextAnchor.MiddleCenter;
             buttonObject.GetComponent<ArcadeButtonFeel>().Initialize(image, shine, shadow,
-                audioSource, selectSound);
+                audioSource, Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
             return button;
         }
 

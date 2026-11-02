@@ -14,6 +14,8 @@ namespace DoubleDown.Presentation
         private Vector3 targetPosition;
         private float targetAngle;
         private bool faceUp;
+        private float edition;
+        private float editionStrength;
 
         public void Initialize(PlayingCard playingCard, Sprite frontSprite, Sprite backSprite,
             Material inkMaterial, int order)
@@ -29,6 +31,8 @@ namespace DoubleDown.Presentation
             transform.position = new Vector3(-4.35f, 1.75f, 0f);
             transform.localScale = Vector3.one * 2f;
             transform.rotation = Quaternion.identity;
+            properties.SetFloat("_Edition", 0f);
+            edition = 0f;
             faceUp = true;
             SetFaceUp(false);
             gameObject.SetActive(true);
@@ -50,9 +54,20 @@ namespace DoubleDown.Presentation
             face.SetPropertyBlock(properties);
         }
 
+        public void SetEdition(float edition)
+        {
+            this.edition = edition;
+            editionStrength = TablePresentation.EffectStrength;
+            properties.SetFloat("_Edition", edition);
+            properties.SetFloat("_EditionStrength", editionStrength);
+            face.SetPropertyBlock(properties);
+        }
+
         public void Tick(float deltaTime)
         {
-            var response = 1f - Mathf.Exp(-12f * Mathf.Min(deltaTime, 1f / 30f));
+            if (editionStrength != TablePresentation.EffectStrength) SetEdition(edition);
+            var response = TablePresentation.ReducedMotion ? 1f :
+                1f - Mathf.Exp(-12f * Mathf.Min(deltaTime, 1f / 30f));
             transform.position = Vector3.Lerp(transform.position, targetPosition, response);
             transform.rotation = Quaternion.Slerp(transform.rotation,
                 Quaternion.Euler(0f, 0f, targetAngle), response);

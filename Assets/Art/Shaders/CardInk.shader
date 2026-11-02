@@ -5,6 +5,8 @@ Shader "DoubleDown/CardInk"
         [PerRendererData] _MainTex ("Card", 2D) = "white" {}
         _InkColor ("Diamond ink", Color) = (0.95, 0.58, 0.15, 1)
         _Recolor ("Recolor diamonds", Float) = 0
+        _Edition ("Edition: foil / gold", Range(0,2)) = 0
+        _EditionStrength ("Edition strength", Range(0,1)) = 1
     }
     SubShader
     {
@@ -27,6 +29,8 @@ Shader "DoubleDown/CardInk"
             CBUFFER_START(UnityPerMaterial)
                 half4 _InkColor;
                 half _Recolor;
+                half _Edition;
+                half _EditionStrength;
             CBUFFER_END
 
             struct Attributes
@@ -58,6 +62,12 @@ Shader "DoubleDown/CardInk"
                 half redInk = step(0.90h, pixel.r) * (1.0h - step(0.30h, pixel.g)) *
                               (1.0h - step(0.40h, pixel.b));
                 pixel.rgb = lerp(pixel.rgb, _InkColor.rgb, redInk * _Recolor);
+                // Restrict edition colour to pale paper so ranks and suits stay readable.
+                half paper = step(0.72h, min(pixel.r, min(pixel.g, pixel.b)));
+                float2 cell = floor(input.uv * 64.0) / 64.0;
+                half band = step(0.75h, frac(cell.x * 3.0 + cell.y * 2.0));
+                half3 foil = lerp(half3(0.52,0.82,0.92),half3(1.0,0.77,0.35), saturate(_Edition-1));
+                pixel.rgb = lerp(pixel.rgb, pixel.rgb * foil, paper * saturate(_Edition) * _EditionStrength * (0.10 + band * 0.16));
                 return pixel * input.color;
             }
             ENDHLSL

@@ -16,6 +16,7 @@ namespace DoubleDown.Presentation
         private Image shadow;
         private AudioSource source;
         private AudioClip sound;
+        private AudioClip hoverSound;
         private Color resting;
         private Vector2 origin;
         private bool hovered;
@@ -33,6 +34,7 @@ namespace DoubleDown.Presentation
             shadow = shadowImage;
             source = audio;
             sound = click;
+            hoverSound = Resources.Load<AudioClip>("TablePresentation/Audio/rollover2");
             resting = face.color;
             origin = rect.anchoredPosition;
         }
@@ -40,7 +42,12 @@ namespace DoubleDown.Presentation
         private void OnEnable() { if (shadow != null) shadow.enabled = true; }
         private void OnDisable() { if (shadow != null) shadow.enabled = false; }
 
-        public void OnPointerEnter(PointerEventData eventData) { hovered = true; }
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            hovered = true;
+            if (button.interactable && source != null && hoverSound != null)
+                source.PlayOneShot(hoverSound, 0.12f);
+        }
         public void OnPointerExit(PointerEventData eventData) { hovered = false; pressed = false; }
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -62,10 +69,12 @@ namespace DoubleDown.Presentation
             var active = button.interactable;
             group.alpha = active ? 1f : 0.38f;
             var lift = active && hovered ? (pressed ? -1f : 2f) : 0f;
+            if (TablePresentation.ReducedMotion) lift = 0f;
             rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition,
                 origin + new Vector2(0f, lift), Mathf.Min(1f, Time.unscaledDeltaTime * 22f));
             var scale = active ? 1f + (hovered && !pressed ? 0.035f : 0f) -
                 (pressed ? 0.03f : 0f) + punch * 0.015f : 1f;
+            if (TablePresentation.ReducedMotion) scale = 1f;
             rect.localScale = Vector3.Lerp(rect.localScale, new Vector3(scale, scale, 1f),
                 Mathf.Min(1f, Time.unscaledDeltaTime * 20f));
             face.color = active ? Color.Lerp(resting, Color.white, hovered ? 0.16f : 0f)

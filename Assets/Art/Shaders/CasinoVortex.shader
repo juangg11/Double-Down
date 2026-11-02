@@ -9,6 +9,7 @@ Shader "DoubleDown/CasinoVortex"
         _Gold ("Warm highlight", Color) = (0.95, 0.49, 0.25, 1)
         _Speed ("Flow speed", Range(0, 2)) = 0.55
         _Pulse ("Score pulse", Range(0, 1)) = 0
+        _State ("Round state", Range(-1,1)) = 0
         _PixelGrid ("Pixel grid XY", Vector) = (320, 180, 0, 0)
     }
     SubShader
@@ -34,6 +35,7 @@ Shader "DoubleDown/CasinoVortex"
                 half4 _Gold;
                 float _Speed;
                 float _Pulse;
+                float _State;
                 float4 _PixelGrid;
             CBUFFER_END
 
@@ -90,6 +92,8 @@ Shader "DoubleDown/CasinoVortex"
                     length((uv - float2(0.34, 0.49)) * float2(1.2, 1.0)));
                 colour *= lerp(0.82, 0.48, tableMask);
                 colour = floor(colour * 24.0 + 0.5) / 24.0;
+                colour = lerp(colour, colour * half3(1.22, 0.88, 0.65), max(0, _State) * 0.35);
+                colour = lerp(colour, colour * half3(0.65, 0.70, 0.88), max(0, -_State) * 0.55);
                 return half4(colour, 1.0);
             }
             ENDHLSL
