@@ -40,9 +40,11 @@ namespace DoubleDown.Scoring
     public readonly struct ScoreBreakdown
     {
         public BigNumber Chips { get; }
-        public double Multiplier { get; }
+        public BigNumber Multiplier { get; }
         public BigNumber Total => Chips * Multiplier;
         public ScoreBreakdown(BigNumber chips, double multiplier)
+            : this(chips, new BigNumber(multiplier)) { }
+        public ScoreBreakdown(BigNumber chips, BigNumber multiplier)
         {
             Chips = chips;
             Multiplier = multiplier;

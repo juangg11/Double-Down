@@ -29,7 +29,7 @@ namespace DoubleDown.Tests
             var rules = new ScoreRules(firstGoal: 140);
             var win = ScoreCalculator.Calculate(hand, HandOutcome.Win, 2, 10, rules);
             Assert.AreEqual("35", win.Chips.ToString());
-            Assert.AreEqual(2, win.Multiplier);
+            Assert.AreEqual(BigNumber.From(2), win.Multiplier);
             Assert.AreEqual("70", win.Total.ToString());
             Assert.AreEqual(BigNumber.Zero,
                 ScoreCalculator.Calculate(hand, HandOutcome.Loss, 2, 10, rules).Total);

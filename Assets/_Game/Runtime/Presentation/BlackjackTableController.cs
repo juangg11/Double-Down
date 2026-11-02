@@ -34,6 +34,8 @@ namespace DoubleDown.Presentation
         private ScoreRules scoreRules;
         private AudioSource audioSource;
         private TablePresentation presentation;
+        private RelicRack relicRack;
+        private int winStreak;
         private AudioClip scoreSound;
         private Material backdropMaterial;
         private long selectedWager;
@@ -109,7 +111,7 @@ namespace DoubleDown.Presentation
 
         private void Update()
         {
-            if (presentation != null && presentation.IsOpen) return;
+            if ((presentation != null && presentation.IsOpen) || (relicRack != null && relicRack.IsOpen)) return;
             HandleKeyboard();
             if (session.Phase == BlackjackPhase.DealerTurn)
             {
@@ -154,6 +156,7 @@ namespace DoubleDown.Presentation
                 session = new BlackjackSession(rulesAsset.ToRules(), runSeed + (uint)session.RoundIndex);
                 session.EventRaised += OnGameEvent;
                 scoreRun.Restart();
+                winStreak = 0;
                 selectedWager = rulesAsset.minimumWager;
                 scoreBeforeAnimation = BigNumber.Zero;
                 scoreGain = BigNumber.Zero;
@@ -193,13 +196,18 @@ namespace DoubleDown.Presentation
 
         private void RecordScore()
         {
+            var activations = new List<int>();
             var hands = new ScoreBreakdown[session.Hands.Count];
             for (var i = 0; i < hands.Length; i++)
             {
                 var hand = session.Hands[i];
                 hands[i] = ScoreCalculator.Calculate(hand.Value, hand.Outcome,
                     hand.Cards.Count, hand.Stake, scoreRules);
+                if (hand.Outcome == HandOutcome.Win || hand.Outcome == HandOutcome.Blackjack) winStreak++;
+                else if (hand.Outcome == HandOutcome.Loss) winStreak = 0;
+                hands[i] = RelicEngine.Apply(hands[i], hand, relicRack.Loadout, winStreak, activations);
             }
+            relicRack.Activate(activations);
             scoreBeforeAnimation = scoreRun.Score;
             scoreGain = scoreRun.RecordDeal(hands);
             scoreAnimation = scoreGain.IsZero ? 1f : 0f;
@@ -213,8 +221,8 @@ namespace DoubleDown.Presentation
             if (backdropMaterial != null) backdropMaterial.SetFloat("_State",
                 scoreRun.State == ScoreRunState.Won ? 1f : scoreRun.State == ScoreRunState.Lost ? -1f : 0f);
             var first = hands[0];
-            formulaText.text = first.Chips + " x " + first.Multiplier.ToString("0.#") +
-                " = " + scoreGain;
+            formulaText.text = hands.Length > 1 ? "2 MANOS = " + scoreGain :
+                first.Chips + " x " + first.Multiplier.ToString() + " = " + scoreGain;
         }
 
         private void UpdateScoreAnimation()
@@ -302,13 +310,14 @@ namespace DoubleDown.Presentation
             {
                 var hand = session.Hands[handIndex];
                 var centre = session.Hands.Count == 1 ? -1.35f
-                    : -3.05f + handIndex * (6.1f / (session.Hands.Count - 1));
-                var spacing = session.Hands.Count == 1 ? 0.86f : 0.62f;
+                    : -1.7f + handIndex * 2.25f;
+                var spacing = session.Hands.Count == 1 ? 0.86f : 0.38f;
                 spacing = Mathf.Min(spacing,
-                    (session.Hands.Count == 1 ? 4.9f : 2.4f) / Mathf.Max(1, hand.Cards.Count - 1));
+                    (session.Hands.Count == 1 ? 4.9f : 1f) / Mathf.Max(1, hand.Cards.Count - 1));
                 for (var i = 0; i < hand.Cards.Count; i++)
                 {
                     var visual = GetVisual(hand.Cards[i]);
+                    visual.transform.localScale = Vector3.one * (session.Hands.Count == 1 ? 2f : 1.6f);
                     visual.SetTarget(new Vector3(centre + (i - (hand.Cards.Count - 1) * 0.5f) * spacing,
                         -1.25f + 0.045f * (1f - Mathf.Abs(i - (hand.Cards.Count - 1) * 0.5f)), 0f),
                         (i - (hand.Cards.Count - 1) * 0.5f) * -2.5f,
@@ -447,7 +456,7 @@ namespace DoubleDown.Presentation
             var playerPanel = MakePanel(canvas.transform, "Player Label", 13, 230, 110, 59, PanelSoft);
             playerText = MakeText(playerPanel.transform, "Player Total", "TU MANO", 8, 7, 100, 49, 16, Color.white, true);
 
-            var meter = MakePanel(canvas.transform, "Score Meter", 302, 127, 129, 106, Panel);
+            var meter = MakePanel(canvas.transform, "Score Meter", 302, 98, 129, 106, Panel);
             scorePanel = meter.GetComponent<RectTransform>();
             MakeStripe(meter.transform, "Score Accent", 0, 0, 129, 3, Gold);
             goalText = MakeText(meter.transform, "Goal", "META 140", 7, 7, 116, 18, 16, Gold);
@@ -470,6 +479,8 @@ namespace DoubleDown.Presentation
                 key.gameObject.AddComponent<KeycapHint>().Initialize(key, key.sprite,
                     (Key)Enum.Parse(typeof(Key), keyNames[i]));
             }
+            relicRack = gameObject.AddComponent<RelicRack>();
+            relicRack.Initialize(canvas, fontAsset, () => session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled);
             presentation = gameObject.AddComponent<TablePresentation>();
             presentation.Initialize(canvas, fontAsset, backdropMaterial);
         }

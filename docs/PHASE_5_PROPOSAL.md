@@ -1,6 +1,6 @@
-# Propuesta de reliquias — pendiente de aprobación
+# Propuesta de reliquias — aprobada
 
-El encargo original pide aprobar la lista antes de implementar el primer lote. Esta propuesta utiliza cuatro huecos y procesa los efectos de izquierda a derecha. Los valores son iniciales y se verificarán con el simulador. Ninguna reliquia cambia el resultado económico de blackjack salvo que lo indique explícitamente.
+Lista aprobada por el usuario el 2 de noviembre de 2026 con iconos provisionales. Utiliza cuatro huecos y procesa los efectos en su orden visual; en la lista vertical de la mesa, de arriba a abajo. Los valores son iniciales. Ninguna reliquia cambia el resultado económico de blackjack salvo que lo indique explícitamente.
 
 | Reliquia | Efecto propuesto sobre puntuación | Icono orientativo |
 | --- | --- | --- |

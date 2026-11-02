@@ -45,6 +45,36 @@ namespace DoubleDown.Tests
             Capture("Phase4Preview.png");
         }
 
+        [UnityTest]
+        public IEnumerator RelicsCanBeEquippedAndReorderedOnlyBetweenHands()
+        {
+            SceneManager.LoadScene("BlackjackTable");
+            yield return new WaitForSecondsRealtime(0.8f);
+            var rack = Object.FindFirstObjectByType<RelicRack>();
+            rack.Toggle();
+            yield return null;
+            var body = GameObject.Find("Relic Collection").transform.Find("Body");
+            body.Find("Relic 02").GetComponent<Button>().onClick.Invoke();
+            Assert.IsFalse(body.Find("Equip").GetComponent<Button>().interactable);
+            body.Find("Equip").GetComponent<Button>().onClick.Invoke();
+            Assert.AreEqual("00", rack.Loadout[0].id);
+            rack.Toggle();
+            var controller = Object.FindFirstObjectByType<BlackjackTableController>();
+            var session = (DoubleDown.Blackjack.BlackjackSession)typeof(BlackjackTableController)
+                .GetField("session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controller);
+            session.Stand();
+            while(session.Phase == DoubleDown.Blackjack.BlackjackPhase.DealerTurn) session.AdvanceDealerStep();
+            rack.Toggle();
+            body.Find("Relic 02").GetComponent<Button>().onClick.Invoke();
+            body.Find("Equip").GetComponent<Button>().onClick.Invoke();
+            Assert.AreEqual("02",rack.Loadout[0].id);
+            body.Find("Down").GetComponent<Button>().onClick.Invoke();
+            Assert.AreEqual("02",rack.Loadout[1].id);
+            Capture("Phase5Relics.png");
+            rack.Toggle();
+            Capture("Phase5Preview.png");
+        }
+
         private static void Capture(string filename)
         {
             var directory = System.Environment.GetEnvironmentVariable("DOUBLEDOWN_CAPTURE_DIR");

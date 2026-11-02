@@ -57,6 +57,12 @@ namespace DoubleDown.Presentation
         private static float Step(float current) => current >= 0.99f ? 0f : Mathf.Min(1f, current + 0.25f);
         private void Update()
         {
+            var rack = GetComponent<RelicRack>();
+            if (rack != null && rack.IsOpen)
+            {
+                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) rack.Toggle();
+                return;
+            }
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Toggle();
         }
         public void Toggle() { drawer.SetActive(!drawer.activeSelf); }
