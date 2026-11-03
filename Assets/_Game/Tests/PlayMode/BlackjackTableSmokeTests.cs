@@ -36,9 +36,15 @@ namespace DoubleDown.Tests
             var hud = GameObject.Find("Blackjack HUD");
             Assert.NotNull(hud);
             Assert.AreEqual(RenderMode.WorldSpace, hud.GetComponent<Canvas>().renderMode);
-            var title = hud.transform.Find("Top Bar/Title").GetComponent<Text>();
-            Assert.NotNull(title.font);
-            Assert.AreEqual("DOUBLE DOWN", title.text);
+            Assert.IsNull(hud.transform.Find("Top Bar/Title"));
+            foreach (var label in hud.GetComponentsInChildren<Text>())
+                if (label.rectTransform.position.x < -2.5f) Assert.That(label.fontSize, Is.EqualTo(16).Or.EqualTo(32), label.name);
+            Canvas.ForceUpdateCanvases();
+            foreach (var path in new[] { "Goal Panel/Goal", "Score Meter/Score", "Score Meter/Formula", "Score Meter/Multiplier", "Chips Wallet/Bankroll", "Gold Wallet/Gold" })
+            {
+                var number = hud.transform.Find(path).GetComponent<Text>();
+                Assert.GreaterOrEqual(number.cachedTextGenerator.vertexCount, number.text.Length * 4, path + " must render its digits");
+            }
             Assert.NotNull(GameObject.Find("UI Event System"));
             Assert.NotNull(GameObject.Find("Casino Vortex (Shader)"));
             var hit = hud.transform.Find("Action Panel/Hit").GetComponent<Button>();

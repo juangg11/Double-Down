@@ -1,11 +1,22 @@
 {
   "name": "DoubleDown.Tests.EditMode",
   "rootNamespace": "DoubleDown.Tests",
-  "references": ["DoubleDown.Runtime"],
-  "optionalUnityReferences": ["TestAssemblies"],
-  "includePlatforms": ["Editor"],
+  "references": [
+    "DoubleDown.Runtime",
+    "Unity.InputSystem"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
   "overrideReferences": true,
-  "precompiledReferences": ["nunit.framework.dll"],
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
   "autoReferenced": false,
-  "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
 }

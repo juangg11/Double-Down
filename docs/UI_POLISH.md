@@ -28,3 +28,8 @@ Para probarlo: abrir `BlackjackTable.unity`, pasar el cursor y pulsar las accion
 ![Mesa revisada](TableReorganized.png)
 
 ![Tienda revisada](Phase6Shop.png)
+
+
+## Revisión posterior: lateral y controles
+
+La revisión actual sustituye la cabecera de marca por datos de partida, elimina el escalado del lateral, corrige cajas numéricas recortadas y añade controles reasignables y nuevas animaciones. Véase [CONTROLS_AND_FEEL.md](CONTROLS_AND_FEEL.md) para comportamiento, pruebas y capturas actuales.

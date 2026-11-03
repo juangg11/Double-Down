@@ -12,6 +12,8 @@ namespace DoubleDown.Presentation
         private Key key;
         public void Initialize(Image target, Sprite sheet, Key keyboardKey)
         {
+            if (up != null) Destroy(up);
+            if (down != null) Destroy(down);
             image = target; key = keyboardKey;
             var texture = sheet.texture;
             var width = texture.width / 2;

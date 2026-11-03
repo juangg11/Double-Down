@@ -50,9 +50,10 @@ namespace DoubleDown.Presentation
             // Label follows the button so the one-pixel press remains coherent.
             label.transform.SetParent(go.transform, false);
             Rect(label.rectTransform, 2, 0, 412, 32);
-            label.text = "JUGAR [ESP]";
+            label.text = "JUGAR";
             go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), null,
                 GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
+            root.AddComponent<PanelMotion>();
             root.SetActive(false);
         }
 
@@ -83,7 +84,7 @@ namespace DoubleDown.Presentation
         {
             if (!IsOpen || Time.frameCount == openedFrame || Keyboard.current == null) return;
             if (GetComponent<RelicRack>().IsOpen || GetComponent<TablePresentation>().IsOpen) return;
-            if (Keyboard.current.spaceKey.wasPressedThisFrame) Confirm();
+            if (GetComponent<TableControls>().Pressed(TableAction.Confirm)) Confirm();
         }
 
         private Text Label(string name, float x, float y, float w, float h, int size)

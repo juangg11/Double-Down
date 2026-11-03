@@ -18,10 +18,13 @@ namespace DoubleDown.Presentation
         private float flow;
         private float volume;
         private Text values;
+        private TableControls controls;
+        private ControlSettingsView controlMenu;
 
         public void Initialize(Canvas canvas, Font pixelFont, Material backdrop)
         {
             font = pixelFont;
+            controls = GetComponent<TableControls>();
             background = backdrop;
             crt = Mathf.Clamp01(PlayerPrefs.GetFloat("visual.crt", 0.25f));
             flow = Mathf.Clamp01(PlayerPrefs.GetFloat("visual.flow", 0.55f));
@@ -36,13 +39,9 @@ namespace DoubleDown.Presentation
                 overlay.GetComponent<Image>().material = glass;
                 overlay.GetComponent<Image>().raycastTarget = false;
             }
-            var hint = Label(canvas.transform, "Settings Hint", "ESC  AJUSTES", 20, 336, 124, 16);
-            hint.color = CasinoUiSkin.Muted;
-            hint.alignment = TextAnchor.MiddleCenter;
-            hint.fontSize = 12;
             drawer = Panel(canvas.transform, "Presentation Settings", 0, 0, 640, 360,
                 new Color(0f, 0f, 0f, 0.65f));
-            var body = Panel(drawer.transform, "Settings Body", 120, 62, 400, 236,
+            var body = Panel(drawer.transform, "Settings Body", 120, 44, 400, 272,
                 new Color(0.018f, 0.035f, 0.06f, 0.99f));
             CasinoUiSkin.Surface(body.GetComponent<Image>(), "Frame", CasinoUiSkin.Ink);
             Label(body.transform, "Heading", "AJUSTES DE LA MESA", 20, 14, 360, 30).fontSize = 24;
@@ -52,7 +51,12 @@ namespace DoubleDown.Presentation
             Button(body.transform, "Effects", "EFECTOS +", 208, 144, () => { EffectStrength = Step(EffectStrength); Apply(); });
             Button(body.transform, "Volume", "VOLUMEN +", 302, 144, () => { volume = Step(volume); Apply(); });
             Button(body.transform, "Motion", "MOVIMIENTO", 20, 186, () => { ReducedMotion = !ReducedMotion; Apply(); }, 170);
-            Button(body.transform, "Close", "VOLVER [ESC]", 210, 186, Toggle, 170);
+            Button(body.transform, "Controls", "CONTROLES", 210, 186, () => controlMenu.Show(), 170);
+            Button(body.transform, "Close", "VOLVER", 20, 228, Toggle, 360);
+            controlMenu = gameObject.AddComponent<ControlSettingsView>();
+            controlMenu.Initialize(drawer.transform, font, controls);
+            body.AddComponent<PanelMotion>();
+            Button(canvas.transform, "Open Settings", "AJUSTES", 548, 1, Toggle, 68, 18);
             drawer.SetActive(false);
             Apply();
         }
@@ -60,15 +64,16 @@ namespace DoubleDown.Presentation
         private static float Step(float current) => current >= 0.99f ? 0f : Mathf.Min(1f, current + 0.25f);
         private void Update()
         {
+            if (controlMenu.IsOpen) { if (controls.EscapePressed) controlMenu.Hide(); return; }
             var rack = GetComponent<RelicRack>();
             if (rack != null && rack.IsOpen)
             {
-                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) rack.Toggle();
+                if (controls.EscapePressed) rack.Toggle();
                 return;
             }
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Toggle();
+            if (controls.EscapePressed) Toggle();
         }
-        public void Toggle() { drawer.SetActive(!drawer.activeSelf); if (drawer.activeSelf) drawer.transform.SetAsLastSibling(); }
+        public void Toggle() { if (drawer.activeSelf) controlMenu.Hide(); drawer.SetActive(!drawer.activeSelf); if (drawer.activeSelf) drawer.transform.SetAsLastSibling(); }
         private void Apply()
         {
             if (glass != null) glass.SetFloat("_Intensity", crt);
@@ -105,12 +110,12 @@ namespace DoubleDown.Presentation
             return text;
         }
         private void Button(Transform parent, string name, string content, float x, float y,
-            UnityEngine.Events.UnityAction action, float width = 78)
+            UnityEngine.Events.UnityAction action, float width = 78, float height = 30)
         {
-            var shadow = Panel(parent, name + " Shadow", x + 2, y + 3, width, 30,
+            var shadow = Panel(parent, name + " Shadow", x + 2, y + 3, width, height,
                 new Color(0.005f, 0.015f, 0.025f)).GetComponent<Image>();
             shadow.raycastTarget = false;
-            var go = Panel(parent, name, x, y, width, 30, new Color(0.08f, 0.25f, 0.29f));
+            var go = Panel(parent, name, x, y, width, height, new Color(0.08f, 0.25f, 0.29f));
             var button = go.AddComponent<Button>();
             go.AddComponent<CanvasGroup>();
             button.transition = Selectable.Transition.None;
@@ -118,7 +123,7 @@ namespace DoubleDown.Presentation
             button.onClick.AddListener(action);
             CasinoUiSkin.Surface(go.GetComponent<Image>(), "Button", CasinoUiSkin.Felt);
             CasinoUiSkin.Surface(shadow, "Button", CasinoUiSkin.Ink);
-            var label = Label(go.transform, "Label", content, 2, 0, width - 4, 30);
+            var label = Label(go.transform, "Label", content, 2, 0, width - 4, height);
             label.alignment = TextAnchor.MiddleCenter;
             go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), shadow, GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
         }

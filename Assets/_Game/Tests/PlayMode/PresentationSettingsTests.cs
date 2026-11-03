@@ -174,6 +174,74 @@ namespace DoubleDown.Tests
             Assert.IsFalse(session.PlayerAcesLow);
         }
 
+        [UnityTest]
+        public IEnumerator ControlsCanBeReassignedFromSettingsWithoutPlayingACard()
+        {
+            SceneManager.LoadScene("BlackjackTable");
+            yield return new WaitForSecondsRealtime(0.8f);
+            Capture("ReadableHud.png");
+            var presentation = Object.FindFirstObjectByType<TablePresentation>();
+            var controls = Object.FindFirstObjectByType<TableControls>();
+            presentation.Toggle();
+            GameObject.Find("Presentation Settings").transform.Find("Settings Body/Controls").GetComponent<Button>().onClick.Invoke();
+            var view = Object.FindFirstObjectByType<ControlSettingsView>();
+            Assert.IsTrue(view.IsOpen);
+            var body = GameObject.Find("Controls Settings").transform.Find("Body");
+            body.Find("Bind Hit").GetComponent<Button>().onClick.Invoke();
+            Assert.AreEqual(TableAction.Hit, controls.Capturing);
+            Assert.IsTrue(controls.CaptureKey(UnityEngine.InputSystem.Key.K, false));
+            Assert.AreEqual(UnityEngine.InputSystem.Key.K, controls.Bindings[TableAction.Hit]);
+            Assert.IsFalse(controls.Pressed(TableAction.Hit));
+            yield return new WaitForSecondsRealtime(0.3f);
+            Capture("ControlsPreview.png");
+            controls.BeginCapture(TableAction.Stand);
+            controls.CancelCapture();
+            Assert.IsNull(controls.Capturing);
+            view.Hide(); presentation.Toggle();
+            var controller = Object.FindFirstObjectByType<BlackjackTableController>();
+            var session = (DoubleDown.Blackjack.BlackjackSession)typeof(BlackjackTableController)
+                .GetField("session", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controller);
+            var before = session.Hands[0].Cards.Count;
+            yield return new WaitForSecondsRealtime(0.05f);
+            var previousBackground = UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior;
+            UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior = UnityEngine.InputSystem.InputSettings.BackgroundBehavior.IgnoreFocus;
+#if UNITY_EDITOR
+            var previousEditorInput = UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode;
+            UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode = UnityEngine.InputSystem.InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+#endif
+            var previousMode = UnityEngine.InputSystem.InputSystem.settings.updateMode;
+            UnityEngine.InputSystem.InputSystem.settings.updateMode = UnityEngine.InputSystem.InputSettings.UpdateMode.ProcessEventsManually;
+            var keyboard = UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Keyboard>();
+            try
+            {
+                Assert.IsFalse(controls.Pressed(TableAction.Hit));
+                Assert.IsNull(controls.Capturing);
+                Assert.AreNotEqual(Time.frameCount, typeof(TableControls).GetField("consumedFrame", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(controls));
+                UnityEngine.InputSystem.InputSystem.QueueStateEvent(keyboard, new UnityEngine.InputSystem.LowLevel.KeyboardState(UnityEngine.InputSystem.Key.H));
+                UnityEngine.InputSystem.InputSystem.Update();
+                controller.SendMessage("HandleKeyboard");
+                Assert.AreEqual(before, session.Hands[0].Cards.Count, "The old binding must no longer deal a card.");
+                UnityEngine.InputSystem.InputSystem.QueueStateEvent(keyboard, new UnityEngine.InputSystem.LowLevel.KeyboardState(UnityEngine.InputSystem.Key.K));
+                UnityEngine.InputSystem.InputSystem.Update();
+                controller.SendMessage("HandleKeyboard");
+                Assert.IsTrue(keyboard.kKey.isPressed, "The test keyboard must receive the queued K event.");
+                Assert.AreSame(keyboard, UnityEngine.InputSystem.Keyboard.current);
+                Assert.IsTrue(keyboard.kKey.wasPressedThisFrame, "K must have a press edge.");
+                Assert.IsTrue(controls.Pressed(TableAction.Hit), "K must resolve to the Hit action in this frame.");
+                Assert.AreEqual(before + 1, session.Hands[0].Cards.Count, "The rebound key must deal exactly one card.");
+            }
+            finally
+            {
+                UnityEngine.InputSystem.InputSystem.RemoveDevice(keyboard);
+                UnityEngine.InputSystem.InputSystem.settings.updateMode = previousMode;
+                UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior = previousBackground;
+#if UNITY_EDITOR
+                UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode = previousEditorInput;
+#endif
+                controls.RestoreDefaults(false);
+            }
+        }
+
         private static void Capture(string filename)
         {
             var directory = System.Environment.GetEnvironmentVariable("DOUBLEDOWN_CAPTURE_DIR");

@@ -16,6 +16,11 @@ namespace DoubleDown.Presentation
         private bool faceUp;
         private float edition;
         private float editionStrength;
+        private bool desiredFace;
+        private float travel, delay, flip = 1f, pulse, size = 1.35f;
+        private readonly Vector3 deckPosition = new Vector3(4.8f, 2.2f, 0f);
+        public void SetSize(float value) => size = value;
+        public void Pulse() => pulse = TablePresentation.ReducedMotion ? 0f : 1f;
 
         public void Initialize(PlayingCard playingCard, Sprite frontSprite, Sprite backSprite,
             Material inkMaterial, int order)
@@ -28,13 +33,14 @@ namespace DoubleDown.Presentation
             face.sharedMaterial = inkMaterial;
             face.sortingOrder = order;
             properties ??= new MaterialPropertyBlock();
-            transform.position = new Vector3(-4.35f, 1.75f, 0f);
-            transform.localScale = Vector3.one * 2f;
+            transform.position = deckPosition;
+            travel = 0f; delay = order <= 4 ? Mathf.Max(0, order - 1) * 0.06f : 0f;
+            pulse = 0f; flip = 1f; desiredFace = false;
+            transform.localScale = Vector3.one * size;
             transform.rotation = Quaternion.identity;
             properties.SetFloat("_Edition", 0f);
             edition = 0f;
-            faceUp = true;
-            SetFaceUp(false);
+            ApplyFace(false);
             gameObject.SetActive(true);
         }
 
@@ -47,7 +53,13 @@ namespace DoubleDown.Presentation
 
         public void SetFaceUp(bool visible)
         {
-            if (faceUp == visible && face.sprite != null) return;
+            if (desiredFace == visible) return;
+            desiredFace = visible;
+            flip = 0f;
+        }
+
+        private void ApplyFace(bool visible)
+        {
             faceUp = visible;
             face.sprite = visible ? front : back;
             properties.SetFloat(RecolorId, visible && card.Suit == CardSuit.Diamonds ? 1f : 0f);
@@ -66,11 +78,38 @@ namespace DoubleDown.Presentation
         public void Tick(float deltaTime)
         {
             if (editionStrength != TablePresentation.EffectStrength) SetEdition(edition);
-            var response = TablePresentation.ReducedMotion ? 1f :
-                1f - Mathf.Exp(-12f * Mathf.Min(deltaTime, 1f / 30f));
-            transform.position = Vector3.Lerp(transform.position, targetPosition, response);
-            transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.Euler(0f, 0f, targetAngle), response);
+            if (TablePresentation.ReducedMotion)
+            {
+                travel = flip = 1f; pulse = 0f;
+                ApplyFace(desiredFace);
+                transform.SetPositionAndRotation(targetPosition, Quaternion.Euler(0, 0, targetAngle));
+                transform.localScale = Vector3.one * size;
+                return;
+            }
+            deltaTime = Mathf.Min(deltaTime, 0.05f);
+            if (delay > 0f) { delay -= deltaTime; return; }
+            if (travel < 1f)
+            {
+                travel = Mathf.Min(1f, travel + deltaTime / 0.34f);
+                var eased = 1f - Mathf.Pow(1f - travel, 3f);
+                transform.position = Vector3.Lerp(deckPosition, targetPosition, eased) + Vector3.up * (Mathf.Sin(travel * Mathf.PI) * 0.24f);
+                transform.rotation = Quaternion.Euler(0, 0, Mathf.Lerp(-12f, targetAngle, eased));
+            }
+            else
+            {
+                var response = 1f - Mathf.Exp(-18f * deltaTime);
+                transform.position = Vector3.Lerp(transform.position, targetPosition, response);
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, 0, targetAngle), response);
+            }
+            if (travel >= 0.6f && flip < 1f)
+            {
+                flip = Mathf.Min(1f, flip + deltaTime / 0.22f);
+                if (flip >= 0.5f && faceUp != desiredFace) ApplyFace(desiredFace);
+            }
+            pulse = Mathf.Max(0, pulse - deltaTime / 0.25f);
+            var bounce = Mathf.Sin(pulse * Mathf.PI) * 0.045f;
+            var width = travel < 0.6f ? 1f : Mathf.Max(0.08f, Mathf.Abs(Mathf.Cos(flip * Mathf.PI)));
+            transform.localScale = new Vector3(size * width * (1f + bounce), size * (1f + bounce), 1f);
         }
     }
 }

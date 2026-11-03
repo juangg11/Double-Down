@@ -70,8 +70,7 @@ namespace DoubleDown.Presentation
             group.alpha = active ? 1f : 0.42f;
             var lift = active && hovered ? (pressed ? -1f : 1f) : 0f;
             if (TablePresentation.ReducedMotion) lift = 0f;
-            rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition,
-                origin + new Vector2(0f, lift), Mathf.Min(1f, Time.unscaledDeltaTime * 22f));
+            rect.anchoredPosition = origin + new Vector2(0f, lift);
             // Keep glyphs at their native scale and preserve the matte colour in every pointer state.
             rect.localScale = Vector3.one;
             face.color = resting;

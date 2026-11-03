@@ -34,7 +34,7 @@ namespace DoubleDown.Presentation
             if (catalog.Length < 15) throw new InvalidOperationException("Build the Phase 5 relic catalog first.");
             var initial = new[] {0,1,8,14};
             for (var i=0;i<4;i++) Loadout.Equip(i,catalog[initial[i]]);
-            Text(canvas.transform,"Relic Heading","RELIQUIAS [TAB]",180,2,436,16);
+            Text(canvas.transform,"Relic Heading","RELIQUIAS",180,2,436,16);
             for (var i=0;i<4;i++)
             {
                 var slot=i;
@@ -61,7 +61,8 @@ namespace DoubleDown.Presentation
             {
                 if(canEdit() && Owns(candidate.id) && Loadout.Equip(selected,candidate)) Refresh();
             });
-            Button(body.transform,"Close","VOLVER [TAB]",380,232,176,30,Toggle);
+            Button(body.transform,"Close","VOLVER",380,232,176,30,Toggle);
+            body.AddComponent<PanelMotion>();
             candidate=Loadout[0];
             modal.SetActive(false);
             Refresh();
@@ -87,7 +88,7 @@ namespace DoubleDown.Presentation
         }
         private void Update()
         {
-            if(Keyboard.current!=null && Keyboard.current.tabKey.wasPressedThisFrame &&
+            if(GetComponent<TableControls>().Pressed(TableAction.Relics) &&
                 !(GetComponent<TablePresentation>()?.IsOpen ?? false)) Toggle();
             timer-=Time.unscaledDeltaTime;
             if(glowing>=0 && !TablePresentation.ReducedMotion)

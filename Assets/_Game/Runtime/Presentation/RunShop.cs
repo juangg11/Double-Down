@@ -23,6 +23,7 @@ namespace DoubleDown.Presentation
         private Text status;
         private Button reroll;
         private Action leave;
+        private int openedFrame;
 
         public void Initialize(Canvas canvas,Font pixelFont,int seed)
         {
@@ -43,15 +44,23 @@ namespace DoubleDown.Presentation
                 descriptions[i]=Text(card.transform,"Effect","",6,68,128,48);
                 buy[i]=Button(card.transform,"Buy","",6,118,128,28,()=>{Economy.Buy(index);Refresh();});
             }
-            status=Text(root.transform,"Status","TAB: EQUIPAR TUS RELIQUIAS",12,192,432,24);
+            status=Text(root.transform,"Status","EQUIPA TUS RELIQUIAS",12,192,432,24);
             reroll=Button(root.transform,"Reroll","",12,224,128,28,()=>{Economy.Reroll();Refresh();});
-            Button(root.transform,"Continue","SIGUIENTE RONDA",158,224,286,28,()=>
-            { DepartedRound=Economy.RewardedRound;root.SetActive(false);leave?.Invoke(); });
+            Button(root.transform,"Continue","SIGUIENTE RONDA",158,224,286,28,LeaveShop);
+            root.AddComponent<PanelMotion>();
             root.SetActive(false);
         }
         public void Open(int round,Action onLeave,int remainingHands=0)
         {
+            openedFrame=Time.frameCount;
             Economy.Open(round,remainingHands);leave=onLeave;root.SetActive(true);root.transform.SetAsLastSibling();Refresh();
+        }
+        private void LeaveShop()
+        { if (!IsOpen) return; DepartedRound=Economy.RewardedRound;root.SetActive(false);leave?.Invoke(); }
+        private void Update()
+        {
+            if (!IsOpen || Time.frameCount==openedFrame || GetComponent<RelicRack>().IsOpen || GetComponent<TablePresentation>().IsOpen) return;
+            if (GetComponent<TableControls>().Pressed(TableAction.Confirm)) LeaveShop();
         }
         public void ResetRun() { Economy.Reset();DepartedRound=0;root.SetActive(false); }
         private void Refresh()
@@ -68,7 +77,7 @@ namespace DoubleDown.Presentation
             }
             reroll.interactable=Economy.CanReroll;
             reroll.GetComponentInChildren<Text>().text=$"RENOVAR {Economy.RerollPrice}";
-            status.text="TAB: EQUIPAR  /  RENOVAR SUBE EL PRECIO";
+            status.text="RENOVAR AUMENTA EL PRECIO";
             Changed?.Invoke();
         }
         private static GameObject Panel(Transform parent,string name,float x,float y,float w,float h,Color color)

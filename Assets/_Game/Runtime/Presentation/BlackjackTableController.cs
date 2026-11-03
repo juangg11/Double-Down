@@ -48,6 +48,11 @@ namespace DoubleDown.Presentation
         private float dealerTimer;
         private Text bankrollText;
         private Text goldText;
+        private Text multiplierText;
+        private Text gainText;
+        private TableControls controls;
+        private float gainToast;
+        private readonly List<BlackjackCardVisual> scoringCards = new List<BlackjackCardVisual>();
         private Text wagerText;
         private Text roundText;
         private Text messageText;
@@ -89,6 +94,7 @@ namespace DoubleDown.Presentation
                 spriteByName[name] = sprite;
             }
 
+            controls = gameObject.AddComponent<TableControls>();
             var rules = rulesAsset.ToRules();
             session = new BlackjackSession(rules, runSeed);
             scoreRules = scoringAsset.ToRules();
@@ -116,6 +122,8 @@ namespace DoubleDown.Presentation
 
         private void Update()
         {
+            for (var i = 0; i < usedCards; i++) cardPool[i].Tick(Time.unscaledDeltaTime);
+            UpdateScoreAnimation();
             if ((presentation != null && presentation.IsOpen) || (relicRack != null && relicRack.IsOpen) ||
                 (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
             HandleKeyboard();
@@ -128,27 +136,25 @@ namespace DoubleDown.Presentation
                     session.AdvanceDealerStep();
                 }
             }
-            for (var i = 0; i < usedCards; i++) cardPool[i].Tick(Time.unscaledDeltaTime);
-            UpdateScoreAnimation();
         }
 
         private void HandleKeyboard()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null) return;
-            if (keyboard.spaceKey.wasPressedThisFrame) TryDeal();
-            if (keyboard.hKey.wasPressedThisFrame) session.Hit();
-            if (keyboard.sKey.wasPressedThisFrame) session.Stand();
-            if (keyboard.dKey.wasPressedThisFrame) session.DoubleDown();
-            if (keyboard.pKey.wasPressedThisFrame) session.Split();
-            if (keyboard.yKey.wasPressedThisFrame) session.ChooseInsurance(true);
-            if (keyboard.nKey.wasPressedThisFrame) session.ChooseInsurance(false);
-            if (keyboard.rKey.wasPressedThisFrame && scoreRun.State == ScoreRunState.Lost) TryDeal();
+            if (controls.Pressed(TableAction.Confirm)) TryDeal();
+            if (controls.Pressed(TableAction.Hit)) session.Hit();
+            if (controls.Pressed(TableAction.Stand)) session.Stand();
+            if (controls.Pressed(TableAction.Double)) session.DoubleDown();
+            if (controls.Pressed(TableAction.Split)) session.Split();
+            if (controls.Pressed(TableAction.Insurance)) session.ChooseInsurance(true);
+            if (controls.Pressed(TableAction.DeclineInsurance)) session.ChooseInsurance(false);
+            if (controls.Pressed(TableAction.Restart) && scoreRun.State == ScoreRunState.Lost) TryDeal();
+            if (controls.Pressed(TableAction.LessBet)) ChangeWager(-1);
+            if (controls.Pressed(TableAction.MoreBet)) ChangeWager(1);
         }
 
         private void TryDeal()
         {
-            if ((shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
+            if (scoreAnimation < 1f || (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
             if (session.Phase != BlackjackPhase.Ready && session.Phase != BlackjackPhase.Settled) return;
             if (scoreRun.State == ScoreRunState.Won)
             {
@@ -159,7 +165,7 @@ namespace DoubleDown.Presentation
                     return;
                 }
                 scoreRun.NextRound();
-                formulaText.text = "FICHAS x MULT";
+                formulaText.text = "0"; multiplierText.text = "1";
                 scoreBeforeAnimation = BigNumber.Zero;
                 scoreGain = BigNumber.Zero;
                 scoreAnimation = 1f;
@@ -170,7 +176,7 @@ namespace DoubleDown.Presentation
                 session = new BlackjackSession(rulesAsset.ToRules(), runSeed + (uint)session.RoundIndex);
                 session.EventRaised += OnGameEvent;
                 scoreRun.Restart();
-                formulaText.text = "FICHAS x MULT";
+                formulaText.text = "0"; multiplierText.text = "1";
                 shop.ResetRun();
                 bossView.ResetRun();
                 relicRack.ResetLoadout();
@@ -236,19 +242,24 @@ namespace DoubleDown.Presentation
             relicRack.Activate(activations);
             scoreBeforeAnimation = scoreRun.Score;
             scoreGain = scoreRun.RecordDeal(hands);
-            scoreAnimation = scoreGain.IsZero ? 1f : 0f;
+            scoreAnimation = scoreGain.IsZero || TablePresentation.ReducedMotion ? 1f : 0f;
+            scoringCards.Clear();
+            gainToast = scoreGain.IsZero ? 0f : 1.2f;
+            gainText.text = "+" + scoreGain;
             scoreTick = 0;
             scorePulse = scoreGain.IsZero ? 0.25f : 1f;
             foreach (var hand in session.Hands)
                 foreach (var card in hand.Cards)
                     if (visibleCards.TryGetValue(card, out var visual))
-                        visual.SetEdition(hand.Outcome == HandOutcome.Blackjack ? 2f :
-                            hand.Outcome == HandOutcome.Win ? 1f : 0f);
+                    {
+                        visual.SetEdition(hand.Outcome == HandOutcome.Blackjack ? 2f : hand.Outcome == HandOutcome.Win ? 1f : 0f);
+                        if (hand.Outcome != HandOutcome.Loss) scoringCards.Add(visual);
+                    }
             if (backdropMaterial != null) backdropMaterial.SetFloat("_State",
                 scoreRun.State == ScoreRunState.Won ? 1f : scoreRun.State == ScoreRunState.Lost ? -1f : 0f);
             var first = hands[0];
-            formulaText.text = hands.Length > 1 ? "2 MANOS = " + scoreGain :
-                first.Chips + " x " + first.Multiplier.ToString() + " = " + scoreGain;
+            Number(formulaText, first.Chips.ToString(), 3);
+            Number(multiplierText, first.Multiplier.ToString(), 3);
         }
 
         private void UpdateScoreAnimation()
@@ -256,26 +267,32 @@ namespace DoubleDown.Presentation
             scorePulse = Mathf.MoveTowards(scorePulse, 0f, Time.unscaledDeltaTime * 1.6f);
             if (scoreAnimation < 1f)
             {
-                scoreAnimation = Mathf.Min(1f, scoreAnimation + Time.unscaledDeltaTime / 0.72f);
+                scoreAnimation = Mathf.Min(1f, scoreAnimation + Time.unscaledDeltaTime / (0.45f + scoringCards.Count * 0.10f));
                 var eased = 1f - Mathf.Pow(1f - scoreAnimation, 3f);
                 DrawScore(scoreBeforeAnimation + scoreGain * eased);
-                var nextTick = Mathf.FloorToInt(scoreAnimation * 4f);
-                if (nextTick > scoreTick)
+                var nextTick = Mathf.Min(scoringCards.Count, Mathf.FloorToInt(scoreAnimation * (scoringCards.Count + 1)));
+                while (scoreTick < nextTick)
                 {
-                    scoreTick = nextTick;
-                    PlaySound(scoreSound, 0.90f + nextTick * 0.10f,
-                        0.93f + nextTick * 0.10f);
+                    scoringCards[scoreTick].Pulse();
+                    PlaySound(scoreSound, 0.9f + scoreTick * 0.06f, 0.92f + scoreTick * 0.06f);
+                    scoreTick++;
                 }
             }
-            if (scorePanel != null)
-                scorePanel.localScale = Vector3.one * (1f + (TablePresentation.ReducedMotion ? 0f : scorePulse * 0.035f * TablePresentation.EffectStrength));
+            if (scorePanel != null) scorePanel.localScale = Vector3.one;
+            if (gainText != null)
+            {
+                gainToast = Mathf.Max(0, gainToast - Time.unscaledDeltaTime);
+                var rise = TablePresentation.ReducedMotion ? 0 : Mathf.Round((1.2f - gainToast) * 5);
+                gainText.rectTransform.anchoredPosition = new Vector2(180, -186 + rise);
+                gainText.color = new Color(Gold.r, Gold.g, Gold.b, Mathf.Clamp01(gainToast * 3));
+            }
             if (backdropMaterial != null)
                 backdropMaterial.SetFloat("_Pulse", scorePulse * 0.8f * TablePresentation.EffectStrength);
         }
 
         private void DrawScore(BigNumber amount)
         {
-            scoreText.text = amount.ToString();
+            Number(scoreText, amount.ToString(), 6);
             if (scoreFill == null) return;
             var ratio = amount.IsZero ? 0d : amount >= scoreRun.Goal ? 1d :
                 amount.Mantissa / scoreRun.Goal.Mantissa *
@@ -323,7 +340,7 @@ namespace DoubleDown.Presentation
             for (var i=0;i<session.DealerCards.Count;i++)
             {
                 var visual=GetVisual(session.DealerCards[i]);
-                visual.transform.localScale=Vector3.one*1.35f;
+                visual.SetSize(1.35f);
                 visual.SetTarget(TableLayout.CardPosition(i,session.DealerCards.Count,true,0,false),0f,10+i);
                 visual.SetFaceUp(i!=1 || session.DealerHoleRevealed);
             }
@@ -334,7 +351,7 @@ namespace DoubleDown.Presentation
                 for(var i=0;i<hand.Cards.Count;i++)
                 {
                     var visual=GetVisual(hand.Cards[i]);
-                    visual.transform.localScale=Vector3.one*(split?1.15f:1.35f);
+                    visual.SetSize(split?1.15f:1.35f);
                     visual.SetTarget(TableLayout.CardPosition(i,hand.Cards.Count,false,h,split),0f,30+h*15+i);
                     visual.SetFaceUp(true);
                 }
@@ -344,19 +361,19 @@ namespace DoubleDown.Presentation
         private void RefreshHud()
         {
             if (bankrollText == null) return;
-            bankrollText.text = BigNumber.From(session.Bankroll).ToString();
-            goldText.text = shop.Economy.Gold.ToString();
+            Number(bankrollText, BigNumber.From(session.Bankroll).ToString(), 3);
+            Number(goldText, shop.Economy.Gold.ToString(), 3);
             wagerText.text = (session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled
                 ? selectedWager : session.Wager).ToString("N0");
-            roundText.text = $"{(currentBoss.HasValue ? "JEFE" : "RONDA")}    {scoreRun.Round:00}";
+            roundText.text = $"MESA {(scoreRun.Round + 2) / 3} / R{scoreRun.Round}";
             bossText.text = currentBoss.HasValue ? "JEFE\n" + currentBoss.Value.Name : "";
-            messageText.text = bossView.IsOpen ? "RONDA JEFE\nREVISA LA REGLA"
-                : scoreRun.State == ScoreRunState.Won ? "META COMPLETA!\nSIGUIENTE RONDA"
-                : scoreRun.State == ScoreRunState.Lost ? "SIN MANOS.\nREINTENTA LA RUN"
-                : session.Phase == BlackjackPhase.PlayerTurn ? "PIDE O\nPLANTATE."
+            messageText.text = bossView.IsOpen ? "RONDA JEFE"
+                : scoreRun.State == ScoreRunState.Won ? "META SUPERADA"
+                : scoreRun.State == ScoreRunState.Lost ? "RUN TERMINADA"
+                : session.Phase == BlackjackPhase.PlayerTurn ? "TU TURNO"
                 : session.Phase == BlackjackPhase.DealerTurn ? "JUEGA LA BANCA."
                 : PixelText(session.LastMessage);
-            goalText.text = "META " + scoreRun.Goal;
+            Number(goalText, scoreRun.Goal.ToString(), 6);
             handsText.text = "MANOS " + scoreRun.HandsRemaining + "/" + scoreRun.HandLimit;
             DrawScore(scoreAnimation >= 1f ? scoreRun.Score : scoreBeforeAnimation);
             dealerText.text = session.DealerCards.Count == 0 ? "BANCA\n-"
@@ -374,8 +391,8 @@ namespace DoubleDown.Presentation
             dealButton.interactable = session.Bankroll >= rulesAsset.minimumWager;
             if (scoreRun.State == ScoreRunState.Lost) dealButton.interactable = true;
             dealButton.GetComponentInChildren<Text>().text = scoreRun.State == ScoreRunState.Won
-                ? "TIENDA [ESP]" : scoreRun.State == ScoreRunState.Lost
-                    ? "REINTENTAR [R]" : "REPARTIR [ESP]";
+                ? "TIENDA" : scoreRun.State == ScoreRunState.Lost
+                    ? "REINTENTAR" : "REPARTIR";
             minusButton.interactable = selectedWager > rulesAsset.minimumWager;
             plusButton.interactable = selectedWager + rulesAsset.minimumWager <= session.Bankroll;
 
@@ -435,6 +452,8 @@ namespace DoubleDown.Presentation
                 events.AddComponent<InputSystemUIInputModule>();
             }
 
+            EventSystem.current.sendNavigationEvents = false;
+
             var canvasObject = new GameObject("Blackjack HUD", typeof(RectTransform),
                 typeof(Canvas), typeof(GraphicRaycaster));
             var canvas = canvasObject.GetComponent<Canvas>();
@@ -449,57 +468,57 @@ namespace DoubleDown.Presentation
             canvasRect.localScale = Vector3.one / 64f;
 
             MakePanel(canvas.transform, "Run Rail", 8, 8, 148, 344, CasinoUiSkin.Felt);
-            var top = MakePanel(canvas.transform, "Top Bar", 16, 12, 132, 48, Color.clear);
-            MakeIcon(top.transform, "Crown", "crown_b", 8, 12, 24, CasinoUiSkin.Paper);
-            MakeText(top.transform, "Title", "DOUBLE DOWN", 44, 0, 84, 48, 24, CasinoUiSkin.Paper);
-            var roundBadge = MakePanel(canvas.transform, "Round Badge", 20, 66, 124, 24, CasinoUiSkin.Red);
-            CasinoUiSkin.Surface(roundBadge, "Banner", CasinoUiSkin.Red);
-            roundText = MakeText(roundBadge.transform, "Round", "", 6, 0, 112, 24, 16, CasinoUiSkin.Paper);
+            roundText = MakeText(canvas.transform, "Round", "", 20, 14, 124, 20, 16, CasinoUiSkin.Paper);
             roundText.alignment = TextAnchor.MiddleCenter;
-
-            var meter = MakePanel(canvas.transform, "Score Meter", 20, 98, 124, 106, CasinoUiSkin.Ink);
-            scorePanel = meter.GetComponent<RectTransform>();
-            goalText = MakeText(meter.transform, "Goal", "", 8, 6, 108, 18, 16, CasinoUiSkin.Muted);
+            var goal = MakePanel(canvas.transform, "Goal Panel", 20, 40, 124, 58, CasinoUiSkin.Ink);
+            MakeText(goal.transform, "Caption", "META", 8, 2, 108, 20, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            goalText = MakeText(goal.transform, "Goal", "", 8, 22, 108, 32, 32, Gold);
             goalText.alignment = TextAnchor.MiddleCenter;
-            scoreText = MakeText(meter.transform, "Score", "0", 8, 24, 108, 34, 32, CasinoUiSkin.Paper);
+
+            var meter = MakePanel(canvas.transform, "Score Meter", 20, 106, 124, 116, CasinoUiSkin.Ink);
+            scorePanel = meter.GetComponent<RectTransform>();
+            MakeText(meter.transform, "Caption", "PUNTOS", 8, 2, 108, 20, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            scoreText = MakeText(meter.transform, "Score", "0", 8, 22, 108, 32, 32, CasinoUiSkin.Paper);
             scoreText.alignment = TextAnchor.MiddleCenter;
-            var progressTrack = MakeStripe(meter.transform, "Progress Track", 12, 62, 100, 4, CasinoUiSkin.Felt);
-            CasinoUiSkin.Surface(progressTrack, "Progress", CasinoUiSkin.Felt);
-            scoreFill = MakeStripe(meter.transform, "Progress Fill", 12, 62, 0, 4, Gold).GetComponent<RectTransform>();
+            var track = MakeStripe(meter.transform, "Progress Track", 12, 57, 100, 4, CasinoUiSkin.Felt);
+            CasinoUiSkin.Surface(track, "Progress", CasinoUiSkin.Felt);
+            scoreFill = MakeStripe(meter.transform, "Progress Fill", 12, 57, 0, 4, Gold).GetComponent<RectTransform>();
             CasinoUiSkin.Surface(scoreFill.GetComponent<Image>(), "Progress", Gold);
-            MakeIcon(meter.transform, "Hand Icon", "cards_stack", 12, 73, 12, CasinoUiSkin.Muted);
-            handsText = MakeText(meter.transform, "Hands", "", 30, 70, 86, 18, 16, CasinoUiSkin.Muted);
-            formulaText = MakeText(meter.transform, "Formula", "FICHAS x MULT", 8, 90, 108, 14, 12, Gold);
-            formulaText.alignment = TextAnchor.MiddleCenter;
+            MakePanel(meter.transform, "Base Box", 6, 68, 54, 42, new Color(0.15f, 0.35f, 0.48f));
+            MakePanel(meter.transform, "Mult Box", 64, 68, 54, 42, CasinoUiSkin.Red);
+            MakeText(meter.transform, "Base Caption", "BASE", 8, 68, 50, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            MakeText(meter.transform, "Mult Caption", "MULT", 66, 68, 50, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            formulaText = MakeText(meter.transform, "Formula", "0", 8, 80, 50, 34, 32, CasinoUiSkin.Paper);
+            multiplierText = MakeText(meter.transform, "Multiplier", "1", 66, 80, 50, 34, 32, CasinoUiSkin.Paper);
+            formulaText.alignment = multiplierText.alignment = TextAnchor.MiddleCenter;
+            handsText = MakeText(canvas.transform, "Hands", "", 20, 226, 124, 20, 16, CasinoUiSkin.Paper);
+            handsText.alignment = TextAnchor.MiddleCenter;
 
-            var chips = MakePanel(canvas.transform, "Chips Wallet", 20, 212, 60, 44, CasinoUiSkin.Ink);
-            MakeIcon(chips.transform, "Icon", "tokens", 6, 5, 12, CasinoUiSkin.Muted);
-            MakeText(chips.transform, "Caption", "FICHAS", 22, 3, 34, 14, 12, CasinoUiSkin.Muted);
-            bankrollText = MakeText(chips.transform, "Bankroll", "", 4, 18, 52, 24, 24, CasinoUiSkin.Paper);
+            var chips = MakePanel(canvas.transform, "Chips Wallet", 20, 246, 60, 48, CasinoUiSkin.Ink);
+            MakeText(chips.transform, "Caption", "FICHAS", 4, 1, 52, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            bankrollText = MakeText(chips.transform, "Bankroll", "", 4, 12, 52, 34, 32, CasinoUiSkin.Paper);
             bankrollText.alignment = TextAnchor.MiddleCenter;
-            var wallet = MakePanel(canvas.transform, "Gold Wallet", 84, 212, 60, 44, CasinoUiSkin.Ink);
-            MakeIcon(wallet.transform, "Icon", "token", 6, 5, 12, Gold);
-            MakeText(wallet.transform, "Caption", "ORO", 22, 3, 34, 14, 12, Gold);
-            goldText = MakeText(wallet.transform, "Gold", "", 4, 18, 52, 24, 24, Gold);
+            var wallet = MakePanel(canvas.transform, "Gold Wallet", 84, 246, 60, 48, CasinoUiSkin.Ink);
+            MakeText(wallet.transform, "Caption", "ORO", 4, 1, 52, 18, 16, Gold).alignment = TextAnchor.MiddleCenter;
+            goldText = MakeText(wallet.transform, "Gold", "", 4, 12, 52, 34, 32, Gold);
             goldText.alignment = TextAnchor.MiddleCenter;
-
-            var betCaption = MakeText(canvas.transform, "Wager Label", "APUESTA", 52, 264, 60, 14, 12, CasinoUiSkin.Muted);
-            betCaption.alignment = TextAnchor.MiddleCenter;
-            minusButton = MakeButton(canvas.transform, "Less Bet", "-", 20, 274, 28, 26, ()=>ChangeWager(-1));
-            wagerText = MakeText(canvas.transform, "Wager", "10", 52, 278, 60, 24, 24, CasinoUiSkin.Paper);
+            MakeText(canvas.transform, "Wager Label", "APUESTA", 20, 298, 124, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            minusButton = MakeButton(canvas.transform, "Less Bet", "-", 20, 318, 28, 26, ()=>ChangeWager(-1));
+            wagerText = MakeText(canvas.transform, "Wager", "10", 52, 318, 60, 26, 16, CasinoUiSkin.Paper);
             wagerText.alignment = TextAnchor.MiddleCenter;
-            plusButton = MakeButton(canvas.transform, "More Bet", "+", 116, 274, 28, 26, ()=>ChangeWager(1));
-            messageText = MakeText(canvas.transform, "Message", "", 20, 310, 124, 24, 12, CasinoUiSkin.Muted);
+            plusButton = MakeButton(canvas.transform, "More Bet", "+", 116, 318, 28, 26, ()=>ChangeWager(1));
+            messageText = MakeText(canvas.transform, "Message", "", 180, 290, 436, 18, 16, CasinoUiSkin.Paper);
             messageText.alignment = TextAnchor.MiddleCenter;
+            gainText = MakeText(canvas.transform, "Score Gain", "", 180, 186, 88, 32, 16, Color.clear);
 
             var side = MakePanel(canvas.transform, "Action Panel", 176, 308, 448, 40, Color.clear);
-            hitButton = MakeButton(side.transform, "Hit", "PEDIR [H]", 4, 0, 100, 34, ()=>session.Hit(), true);
-            standButton = MakeButton(side.transform, "Stand", "PLANTAR [S]", 116, 0, 100, 34, ()=>session.Stand());
-            doubleButton = MakeButton(side.transform, "Double", "DOBLAR [D]", 228, 0, 100, 34, ()=>session.DoubleDown());
-            splitButton = MakeButton(side.transform, "Split", "DIVIDIR [P]", 340, 0, 100, 34, ()=>session.Split());
-            dealButton = MakeButton(side.transform, "Deal", "REPARTIR [ESP]", 116, 0, 212, 34, TryDeal, true);
-            insuranceButton = MakeButton(side.transform, "Insurance", "SEGURO [Y]", 4, 0, 212, 34, ()=>session.ChooseInsurance(true));
-            declineButton = MakeButton(side.transform, "No Insurance", "PASAR [N]", 228, 0, 212, 34, ()=>session.ChooseInsurance(false));
+            hitButton = MakeButton(side.transform, "Hit", "PEDIR", 4, 0, 100, 34, ()=>session.Hit(), true);
+            standButton = MakeButton(side.transform, "Stand", "PLANTARSE", 116, 0, 100, 34, ()=>session.Stand());
+            doubleButton = MakeButton(side.transform, "Double", "DOBLAR", 228, 0, 100, 34, ()=>session.DoubleDown());
+            splitButton = MakeButton(side.transform, "Split", "DIVIDIR", 340, 0, 100, 34, ()=>session.Split());
+            dealButton = MakeButton(side.transform, "Deal", "REPARTIR", 116, 0, 212, 34, TryDeal, true);
+            insuranceButton = MakeButton(side.transform, "Insurance", "SEGURO", 4, 0, 212, 34, ()=>session.ChooseInsurance(true));
+            declineButton = MakeButton(side.transform, "No Insurance", "PASAR", 228, 0, 212, 34, ()=>session.ChooseInsurance(false));
             dealerText = MakeText(canvas.transform, "Dealer Total", "BANCA", 180, 128, 88, 54, 16, Cyan);
             bossText = MakeText(canvas.transform, "Boss Rule", "", 180, 90, 88, 34, 12, Gold);
             playerText = MakeText(canvas.transform, "Player Total", "TU MANO", 180, 222, 88, 70, 16, Gold);
@@ -527,6 +546,12 @@ namespace DoubleDown.Presentation
             image.raycastTarget = false;
             if (color.a > 0f) CasinoUiSkin.Surface(image, "Frame", color);
             return image;
+        }
+
+        private static void Number(Text text, string value, int largeLimit)
+        {
+            text.fontSize = value.Length <= largeLimit ? 32 : 16;
+            text.text = value;
         }
 
         private static void MakeIcon(Transform parent, string name, string asset, float x, float y, float size, Color tint)
