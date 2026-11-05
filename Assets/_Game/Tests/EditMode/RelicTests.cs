@@ -27,11 +27,11 @@ namespace DoubleDown.Tests
             Assert.AreEqual(new BigNumber(multiplier),result.Multiplier);
         }
         [Test]
-        public void CatalogContainsFifteenDistinctDefinitionsWithIcons()
+        public void CatalogContainsFiftyDistinctDefinitionsWithIcons()
         {
             var catalog=Resources.LoadAll<RelicDefinition>("Relics");
-            Assert.AreEqual(15,catalog.Length);
-            Assert.AreEqual(15,catalog.Select(r=>r.id).Distinct().Count());
+            Assert.AreEqual(50,catalog.Length);
+            Assert.AreEqual(50,catalog.Select(r=>r.id).Distinct().Count());
             Assert.IsTrue(catalog.All(r=>r.icon!=null && r.amount>0));
         }
         [Test]

@@ -1,53 +1,35 @@
-# Mesa reorganizada y Fase 6 en curso
+# Fase 6 — run completa
 
-La revisión posterior del lateral y los botones está documentada en [UI_POLISH.md](UI_POLISH.md), con los nuevos assets y sus créditos.
+La Fase 6 incorpora tienda, renovaciones, consumibles, vales, edición de mazo, efectos de cartas y jefes. El catálogo aprobado alcanza **50 reliquias, 12 modificaciones (3 ediciones, 6 mejoras, 3 sellos), 20 consumibles, 12 vales y 10 jefes**. La propuesta y aprobación están en PHASE_6_CONTENT_PROPOSAL.md.
 
-## Distribución revisada
+## Funcionamiento
 
-La mesa usa una cuadrícula lógica de 640×360. La columna izquierda reúne ronda, meta, puntuación, manos, fichas, oro y apuesta. Las cuatro reliquias ocupan una fila superior y se resuelven de izquierda a derecha. La banca y el jugador tienen dos bandas independientes; las acciones permanecen en la banda inferior. Se retiraron las indicaciones de teclado duplicadas y se redujo la luminosidad del fondo procedural para mejorar el contraste.
+- La tienda se abre al superar una meta. Tres pestañas separan reliquias, consumibles y vales. Cada oferta tiene detalle completo. Renovar cambia las tres pestañas y aumenta su coste; no repite reliquias o vales adquiridos. Los consumibles pueden volver a aparecer.
+- El oro es independiente de las fichas de blackjack. Los vales modifican precios, interés, recompensa de ronda y recuperación de fichas. Los requisitos de vales se comprueban antes de cobrar. La recompensa solo se concede una vez por ronda.
+- **Mazo** muestra 18 cartas por página, permite seleccionar una carta y confirmar el uso de un consumible entre manos. Una operación inválida no gasta el objeto. Se puede tirar un consumible entre manos. Cada copia tiene identidad independiente y conserva sus capas al duplicarse.
+- Edición, mejora y sello son independientes; cambiar una capa mantiene las otras. Sus bonos se aplican antes de las reliquias y solo en manos que puntúan. Eco repite los bonos de edición y mejora una vez. La banca usa el mismo mazo, sin recibir los bonos de sus cartas.
+- La edición manual mantiene entre 24 y 104 cartas. Al llegar a 24, Vidrio/Ceniza consumen su mejora en lugar de borrar otra carta: el bono no queda permanente y el mazo permanece jugable. Si el zapato de una mano se agota, se puede plantar y la banca se planta con las cartas disponibles.
+- La colección pagina 15 reliquias por pantalla. Se pueden ordenar con los botones o arrastrando los iconos de sus huecos entre manos. Los vales amplían de 4 a 6 huecos. La bolsa de consumibles aumenta de 2 a 4.
+- Cada tercera ronda presenta un jefe. El catálogo se amplía por mesa. Al cambiar de ronda se restauran reglas normales; límites de manos de jefe prevalecen sobre los vales. La meta se multiplica cuando el jefe lo especifica.
+- La run no tiene ronda final. Termina por no alcanzar una meta o quedarse sin apuesta válida. Reiniciar limpia el mazo, consumibles, vales, oro, reliquias y reglas temporales. Se conserva la mejor mano de la run para su resumen.
 
-`TableLayout.cs` define las zonas y la separación de cartas. Las manos largas comprimen su separación dentro de su propia banda; una división crea dos grupos y distingue «TU TURNO», «ESPERA» y «PLANTADA». Las cartas de la mesa se presentan rectas y más pequeñas para conservar la lectura y dejar espacio a la build. El sandbox de interacción sigue siendo una escena independiente.
+## Archivos principales
 
-La tienda sustituye el área central de juego entre rondas, manteniendo visibles la información de la run y las reliquias. El catálogo y los ajustes aparecen por encima de la tienda cuando se abren.
+`RunDeck`, `RunInventory`, `CardModificationDefinition`, `ConsumableDefinition`, `VoucherDefinition`, `CardModificationEngine` y `RelicEngine` implementan contenido y efectos. `BlackjackSession` admite un mazo de instancias y restricciones temporales. `RunShop`, `DeckWorkshop`, `RelicRack` y `BossEncounterView` los presentan. Las definiciones están en `Assets/Resources/{Relics,CardModifications,Consumables,Vouchers,Bosses}`; los iconos provisionales en `Assets/_Placeholders/Phase6`.
 
-![Mesa](TableReorganized.png)
-
-![Mano dividida](SplitReorganized.png)
-
-## Tienda y economía implementadas
-
-- Al superar la meta, **Tienda [Esp]** abre tres ofertas de reliquias aún no adquiridas. **Siguiente ronda** cierra la tienda y reparte la siguiente mano.
-- El oro es independiente de las fichas apostadas. La configuración inicial concede 8 de oro; una ronda superada concede `6 + número de ronda + manos sobrantes`. La recompensa solo se concede una vez por ronda.
-- Cada reliquia cuesta 6. Comprar descuenta el precio, añade la reliquia al inventario de la run y agota esa oferta. **Tab** abre el catálogo para equipar las adquiridas. Las cuatro reliquias iniciales se conservan como conjunto de partida.
-- Renovar cuesta 2 inicialmente y aumenta en 1 tras cada renovación. El precio se reinicia en la siguiente tienda. No se cobra si faltan fondos o si ya se posee todo el catálogo.
-- Las ofertas no incluyen duplicados ni reliquias ya adquiridas. Se generan con una semilla separada del RNG visual y derivada de la semilla configurada de la run.
-- Al reiniciar tras perder se restablecen oro, inventario, ofertas y equipamiento inicial. El inventario todavía no se guarda al cerrar el juego.
-
-![Tienda](Phase6Shop.png)
-
-## Rondas jefe integradas
-
-Cada tercera ronda incorpora una de tres reglas: ases bajos, banca en 18 o dos manos. Se anuncia antes del reparto y se retira al pasar de ronda. Consulta [BOSSES.md](BOSSES.md) para configuración, pruebas y límites.
-
-## Archivos y configuración
-
-`Assets/Resources/EconomyBalance.asset` contiene oro inicial, precio de reliquia, coste inicial e incremento de renovación, premio base y oro por mano sobrante. `EconomyBalanceConfig` convierte esos datos en reglas de dominio. `RunEconomy` aplica las transacciones sin depender de la UI. `RunShop` presenta las ofertas y actualiza el HUD; `BlackjackTableController` enlaza victoria, tienda y siguiente ronda.
-
-También se modificaron `RelicRack` (fila horizontal y equipamiento limitado al inventario), `TablePresentation` (orden de ventanas), `CasinoVortex.shader` (luminosidad), y las pruebas EditMode/PlayMode. La escena `BlackjackTable` construye el HUD al iniciar; no es necesario reconstruirla para ver esta distribución.
+Se amplió el núcleo anterior para distinguir copias de cartas; la igualdad incluye InstanceId. Las pruebas de reglas que construyen cartas sin identidad conservan su comportamiento previo. El guion de generación aprobado está en `tools/generate_phase6_content.py`; conserva GUIDs, pero sobrescribe los valores del lote generado, por lo que no debe ejecutarse después de ajustar manualmente esos assets sin actualizar el guion.
 
 ## Cómo probar
 
-1. Abrir `Assets/_Game/Scenes/BlackjackTable.unity` y pulsar Play.
-2. Comprobar que las cartas, los totales, la columna izquierda y los botones están separados. Probar pedir varias cartas y dividir una pareja cuando esté disponible.
-3. Abrir **Tab**, seleccionar una reliquia no adquirida y comprobar que no se permite equiparla. Durante una mano tampoco se permiten cambios en el equipamiento.
-4. Superar una meta, abrir **Tienda [Esp]**, comprar y comprobar el descuento de oro y la oferta agotada. Usar **Tab** para equiparla entre manos.
-5. Renovar ofertas, comprobar el incremento de precio y continuar. En la siguiente tienda, verificar que el precio vuelve al inicial y las reliquias adquiridas no se ofrecen.
-6. Abrir y cerrar **Esc** y **Tab** desde la tienda. Comprobar que los controles de la mesa quedan tapados por el panel central y las ventanas abiertas reciben el input.
+1. Abrir MainMenu y empezar una run. Pedir, plantarse, doblar y dividir cuando sean válidos; seguro al mostrar as la banca.
+2. Superar una meta, comprar en cada pestaña y comprobar oro, capacidad y oferta agotada. Abrir Detalle para leer efectos completos.
+3. Abrir Mazo, elegir carta, elegir consumible y Aplicar. Confirmar que solo desaparece el objeto usado y que la carta conserva las capas anteriores. Pasar página y volver a la mesa.
+4. Equipar una reliquia comprada y arrastrar dos huecos para intercambiarlos. Durante una mano, comprobar que no permite modificar la build.
+5. Llegar a ronda 3, leer el jefe y comprobar su regla; continuar hasta ronda 4 para comprobar su retirada.
+6. Perder, revisar el resumen y reintentar. Verificar oro, mazo de 52 cartas y cuatro reliquias iniciales.
 
-## Verificación y límites
+## Calidad y límites de esta entrega
 
-Las pruebas automatizadas comprueban transacciones deterministas, recompensa única, precios configurables, premio por manos sobrantes, coste creciente, agotamiento de catálogo, reinicio, bloqueo de equipamiento y continuidad a la siguiente ronda. La distribución se comprueba con manos de hasta once cartas y una división real en PlayMode. Se revisan capturas de mesa, división, catálogo y tienda a 640×360. Resultado tras integrar los jefes: **43 pruebas EditMode y 8 PlayMode superadas** en Unity 6000.3.26f1. Sin errores ni warnings de compilación C# en los registros de estas ejecuciones. La prueba del sandbox espera ahora a que termine el giro de las cartas, con un tiempo máximo, para evitar fallos por la duración de un frame en batch mode.
+Las pruebas de dominio cubren catálogo, duplicación, shuffle determinista, capas, retrigger, debuffs, límites de mazo, transacciones, requisitos, capacidad, reinicio, jefes y fin de mano sin cartas. Las pruebas PlayMode recorren compra, aplicación, paginación, siguiente ronda, menús y derrota. El informe final está en PORTFOLIO_RELEASE.md; la simulación de 2000 runs en PHASE_6_SIMULATION.md.
 
-La Fase 6 **no está completa**. Falta ampliar los jefes de 3 a 10, además de consumibles, vales, edición de mazo, efectos jugables de ediciones/mejoras/sellos y la ampliación de contenido hasta los mínimos del encargo. El balance de economía es inicial y necesita simulaciones con builds; aún no es balance de lanzamiento. El guardado y la metaprogresión corresponden a la Fase 7. Las pruebas actuales no certifican rendimiento sostenido a 60 FPS ni una build de producción.
-
-No hacen falta nuevos assets para este tramo: utiliza los 15 iconos provisionales aprobados y el audio suministrado. Los próximos lotes de objetos necesitan propuesta de efectos e iconos antes de incorporarse; no se han inventado nuevos ítems ni arte final.
+Los iconos son provisionales aprobados. El balance es inicial: la simulación usa una política sencilla, no optimiza builds. Guardado de runs, metaprogresión y logros siguen en Fase 7; no se afirma que estén implementados. No se necesita arte nuevo para ejecutar esta fase. Los PNG de reemplazo están especificados en la propuesta; música y arte definitivo se pueden integrar durante el pulido posterior.

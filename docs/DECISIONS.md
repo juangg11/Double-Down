@@ -19,3 +19,8 @@
 | 2026-11-02 | Renovación 2, 3, 4... por tienda; premio por manos restantes | Implementa coste creciente y recompensa de eficiencia; valores en EconomyBalance.asset. |
 | 2026-11-02 | Superficies mates con sprites del pack Crusenho y botones sin aclarado ni escala al hover | Revisión solicitada por el usuario; se conserva respuesta de un píxel y audio, con texto a escala fija. |
 | 2026-11-02 | Primeros jefes: ases bajos, banca en 18 y dos manos; aviso antes de repartir | Reglas previstas en el encargo original, con el icono provisional ya disponible. Las restricciones expiran al terminar la ronda y no reinician el saldo. |
+
+
+## Fase 6 y edición de portfolio (noviembre 2026)
+
+Se conserva el zapato compartido de blackjack: los cambios del mazo afectan también a las cartas que recibe la banca, pero sus efectos de puntuación son exclusivos del jugador. Las cartas duplicadas reciben identidades nuevas. El mínimo de 24 evita mazos inutilizables; al llegar a él, una mejora destructiva se consume en lugar de eliminar la carta. La edición de portfolio incluye menú y derrota antes de la Fase 8 para poder distribuir un recorrido completo. No incluye guardado de runs ni metaprogresión de Fase 7.

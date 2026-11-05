@@ -60,6 +60,7 @@ namespace DoubleDown.Presentation
         public bool Pressed(TableAction action) => !Capturing.HasValue && consumedFrame != Time.frameCount &&
             Keyboard.current != null && Keyboard.current[Bindings[action]].wasPressedThisFrame;
         public bool EscapePressed => consumedFrame != Time.frameCount && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+        public void ConsumeFrame() => consumedFrame = Time.frameCount;
         public void BeginCapture(TableAction action) { Capturing = action; UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null); consumedFrame = Time.frameCount; Changed?.Invoke(); }
         public void CancelCapture() { Capturing = null; consumedFrame = Time.frameCount; Changed?.Invoke(); }
         public bool CaptureKey(Key key, bool persist = true)

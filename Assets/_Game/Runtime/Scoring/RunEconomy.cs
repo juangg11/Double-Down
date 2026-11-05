@@ -40,9 +40,18 @@ namespace DoubleDown.Scoring
         public int RewardedRound { get; private set; }
         public int LastReward { get; private set; }
         public int RerollPrice { get; private set; }
-        public int RelicPrice => rules.RelicPrice;
+        public int RelicDiscount { get; set; }
+        public int RerollDiscount { get; set; }
+        public int BonusReward { get; set; }
+        public int InterestCap { get; set; }
+        public int RelicPrice => Math.Max(1, rules.RelicPrice - RelicDiscount);
+        public bool TrySpend(int amount)
+        { if (amount < 1 || Gold < amount) return false; Gold -= amount; return true; }
+        public void GrantGold(int amount)
+        { if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount)); Gold = checked(Gold + amount); }
+        public bool AdditionalOffersAvailable { get; set; }
         public bool CanReroll => RewardedRound > 0 && Gold >= RerollPrice &&
-            catalog.Exists(id => !owned.Contains(id));
+            (AdditionalOffersAvailable || catalog.Exists(id => !owned.Contains(id)));
         public IReadOnlyList<string> Offers => offers;
         public bool Owns(string id) => owned.Contains(id);
         public RunEconomy(IEnumerable<string> ids, int seed, EconomyRules? rules = null)
@@ -57,20 +66,21 @@ namespace DoubleDown.Scoring
         {
             random = new Random(seed);
             owned.Clear(); foreach(var id in new[]{"00","01","08","14"}) owned.Add(id);
+            RelicDiscount = RerollDiscount = BonusReward = InterestCap = 0;
             Gold = rules.StartingGold;
             RewardedRound = 0;
             LastReward = 0;
-            RerollPrice = rules.InitialRerollPrice;
+            RerollPrice = Math.Max(1, rules.InitialRerollPrice - RerollDiscount);
             Array.Clear(offers, 0, offers.Length);
         }
         public void Open(int completedRound, int remainingHands = 0)
         {
             if(completedRound<=RewardedRound) return;
             if (remainingHands < 0) throw new ArgumentOutOfRangeException(nameof(remainingHands));
-            LastReward = checked(rules.RoundReward + completedRound + remainingHands * rules.GoldPerRemainingHand);
+            LastReward = checked(rules.RoundReward + completedRound + remainingHands * rules.GoldPerRemainingHand + BonusReward + Math.Min(InterestCap, Gold / 5));
             Gold = checked(Gold + LastReward);
             RewardedRound = completedRound;
-            RerollPrice = rules.InitialRerollPrice;
+            RerollPrice = Math.Max(1, rules.InitialRerollPrice - RerollDiscount);
             Roll();
         }
         public bool Reroll()

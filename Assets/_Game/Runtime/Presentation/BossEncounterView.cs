@@ -83,7 +83,7 @@ namespace DoubleDown.Presentation
         private void Update()
         {
             if (!IsOpen || Time.frameCount == openedFrame || Keyboard.current == null) return;
-            if (GetComponent<RelicRack>().IsOpen || GetComponent<TablePresentation>().IsOpen) return;
+            if (GetComponent<DeckWorkshop>()?.IsOpen == true || GetComponent<RelicRack>().IsOpen || GetComponent<TablePresentation>().IsOpen) return;
             if (GetComponent<TableControls>().Pressed(TableAction.Confirm)) Confirm();
         }
 

@@ -21,7 +21,7 @@ namespace DoubleDown.Presentation
         private TableControls controls;
         private ControlSettingsView controlMenu;
 
-        public void Initialize(Canvas canvas, Font pixelFont, Material backdrop)
+        public void Initialize(Canvas canvas, Font pixelFont, Material backdrop, bool showShortcut = true)
         {
             font = pixelFont;
             controls = GetComponent<TableControls>();
@@ -41,10 +41,10 @@ namespace DoubleDown.Presentation
             }
             drawer = Panel(canvas.transform, "Presentation Settings", 0, 0, 640, 360,
                 new Color(0f, 0f, 0f, 0.65f));
-            var body = Panel(drawer.transform, "Settings Body", 120, 44, 400, 272,
+            var body = Panel(drawer.transform, "Settings Body", 120, 24, 400, 312,
                 new Color(0.018f, 0.035f, 0.06f, 0.99f));
             CasinoUiSkin.Surface(body.GetComponent<Image>(), "Frame", CasinoUiSkin.Ink);
-            Label(body.transform, "Heading", "AJUSTES DE LA MESA", 20, 14, 360, 30).fontSize = 24;
+            Label(body.transform, "Heading", "AJUSTES", 20, 10, 360, 38).fontSize = 32;
             values = Label(body.transform, "Values", "", 22, 50, 350, 90);
             Button(body.transform, "CRT", "CRT +", 20, 144, () => { crt = Step(crt); Apply(); });
             Button(body.transform, "Flow", "FONDO +", 114, 144, () => { flow = Step(flow); Apply(); });
@@ -52,11 +52,18 @@ namespace DoubleDown.Presentation
             Button(body.transform, "Volume", "VOLUMEN +", 302, 144, () => { volume = Step(volume); Apply(); });
             Button(body.transform, "Motion", "MOVIMIENTO", 20, 186, () => { ReducedMotion = !ReducedMotion; Apply(); }, 170);
             Button(body.transform, "Controls", "CONTROLES", 210, 186, () => controlMenu.Show(), 170);
-            Button(body.transform, "Close", "VOLVER", 20, 228, Toggle, 360);
+            Button(body.transform, "Display", "VENTANA / COMPLETA", 20, 228, () =>
+            {
+                var mode=Screen.fullScreenMode==FullScreenMode.Windowed?FullScreenMode.FullScreenWindow:FullScreenMode.Windowed;
+                Screen.SetResolution(mode==FullScreenMode.Windowed?1280:Display.main.systemWidth,mode==FullScreenMode.Windowed?720:Display.main.systemHeight,mode);
+            },170);
+            if(GetComponent<BlackjackTableController>()!=null)
+                Button(body.transform,"Main Menu","MENU PRINCIPAL",210,228,()=>GetComponent<RunEndView>().ConfirmLeave(),170);
+            Button(body.transform, "Close", "VOLVER", 20, 270, Toggle, 360);
             controlMenu = gameObject.AddComponent<ControlSettingsView>();
             controlMenu.Initialize(drawer.transform, font, controls);
             body.AddComponent<PanelMotion>();
-            Button(canvas.transform, "Open Settings", "AJUSTES", 548, 1, Toggle, 68, 18);
+            if(showShortcut) Button(canvas.transform, "Open Settings", "AJUSTES", 548, 1, Toggle, 68, 18);
             drawer.SetActive(false);
             Apply();
         }
@@ -64,6 +71,7 @@ namespace DoubleDown.Presentation
         private static float Step(float current) => current >= 0.99f ? 0f : Mathf.Min(1f, current + 0.25f);
         private void Update()
         {
+            if (GetComponent<DeckWorkshop>()?.IsOpen == true || GetComponent<RunEndView>()?.Confirming == true || GetComponent<PortfolioMenu>()?.ModalOpen == true) return;
             if (controlMenu.IsOpen) { if (controls.EscapePressed) controlMenu.Hide(); return; }
             var rack = GetComponent<RelicRack>();
             if (rack != null && rack.IsOpen)

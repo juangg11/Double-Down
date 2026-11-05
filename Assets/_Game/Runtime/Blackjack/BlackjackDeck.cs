@@ -17,6 +17,12 @@ namespace DoubleDown.Blackjack
                 for (var rank = 1; rank <= 13; rank++)
                     cards.Add(new PlayingCard((CardSuit)suit, (CardRank)rank));
 
+            Shuffle(seed);
+        }
+
+        public BlackjackDeck(IEnumerable<PlayingCard> source, uint seed) : this(source) => Shuffle(seed);
+        private void Shuffle(uint seed)
+        {
             var random = new XorShift32(seed);
             for (var i = cards.Count - 1; i > 0; i--)
             {

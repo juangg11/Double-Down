@@ -8,14 +8,17 @@ namespace DoubleDown.Blackjack
 
     public readonly struct PlayingCard : IEquatable<PlayingCard>
     {
+        public int InstanceId { get; }
         public CardSuit Suit { get; }
         public CardRank Rank { get; }
         public int BlackjackValue => Rank == CardRank.Ace ? 1 : Math.Min((int)Rank, 10);
 
-        public PlayingCard(CardSuit suit, CardRank rank)
+        public PlayingCard(CardSuit suit, CardRank rank, int instanceId = 0)
         {
             if (!Enum.IsDefined(typeof(CardSuit), suit) || !Enum.IsDefined(typeof(CardRank), rank))
                 throw new ArgumentOutOfRangeException(nameof(rank), "Invalid card suit or rank.");
+            if (instanceId < 0) throw new ArgumentOutOfRangeException(nameof(instanceId));
+            InstanceId = instanceId;
             Suit = suit;
             Rank = rank;
         }
@@ -37,9 +40,9 @@ namespace DoubleDown.Blackjack
             }
         }
 
-        public bool Equals(PlayingCard other) => Suit == other.Suit && Rank == other.Rank;
+        public bool Equals(PlayingCard other) => InstanceId == other.InstanceId && Suit == other.Suit && Rank == other.Rank;
         public override bool Equals(object obj) => obj is PlayingCard other && Equals(other);
-        public override int GetHashCode() => ((int)Suit * 17) ^ (int)Rank;
+        public override int GetHashCode() => (((int)Suit * 17) ^ (int)Rank) * 397 ^ InstanceId;
         public override string ToString() => $"{Rank} of {Suit}";
     }
 

@@ -7,6 +7,8 @@ namespace DoubleDown.Scoring
     {
         [Min(0)] public int startingGold = 8;
         [Min(1)] public int relicPrice = 6;
+        [Min(1)] public int consumablePrice = 4;
+        [Min(1)] public int voucherPrice = 8;
         [Min(1)] public int initialRerollPrice = 2;
         [Min(1)] public int rerollIncrease = 1;
         [Min(0)] public int roundReward = 6;

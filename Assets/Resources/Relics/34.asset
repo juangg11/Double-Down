@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51c6f90a9e519ad4b9e6126c0b0eb50d, type: 3}
+  m_Name: 34
+  m_EditorClassIdentifier: DoubleDown.Runtime::DoubleDown.Scoring.RelicDefinition
+  id: "34"
+  displayName: "PAR DE SALIDA"
+  description: "+1 MULT SI LAS DOS PRIMERAS CARTAS TIENEN EL MISMO RANGO"
+  icon: {fileID: 21300000, guid: 4107293ea58946d1ad746cebc6e289e8, type: 3}
+  trigger: 18
+  operation: 1
+  amount: 1
+  suit: 0
+  rarity: 1

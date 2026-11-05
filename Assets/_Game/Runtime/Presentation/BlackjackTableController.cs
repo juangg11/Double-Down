@@ -36,6 +36,10 @@ namespace DoubleDown.Presentation
         private TablePresentation presentation;
         private RelicRack relicRack;
         private RunShop shop;
+        private readonly RunInventory inventory = new RunInventory();
+        private DeckWorkshop workshop;
+        private RunEndView ending;
+        private bool defeatShown;
         private BossSchedule bosses;
         private BossRule? currentBoss;
         private BossEncounterView bossView;
@@ -99,7 +103,8 @@ namespace DoubleDown.Presentation
             session = new BlackjackSession(rules, runSeed);
             scoreRules = scoringAsset.ToRules();
             bosses = new BossSchedule(Array.ConvertAll(Resources.LoadAll<BossDefinition>("Bosses"), boss => boss.ToRule()), runSeed);
-            scoreRun = new ScoreRun(scoreRules, round => bosses.ForRound(round)?.MaximumHands ?? 0);
+            scoreRun = new ScoreRun(scoreRules, round => bosses.ForRound(round)?.MaximumHands ?? 0,
+                () => inventory.Bonus(VoucherEffect.Hands), round => bosses.ForRound(round)?.GoalFactor ?? 1);
             selectedWager = rules.MinimumWager;
             session.EventRaised += OnGameEvent;
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -124,8 +129,11 @@ namespace DoubleDown.Presentation
         {
             for (var i = 0; i < usedCards; i++) cardPool[i].Tick(Time.unscaledDeltaTime);
             UpdateScoreAnimation();
+            if(scoreRun.State==ScoreRunState.Lost && scoreAnimation>=1 && !defeatShown)
+            { defeatShown=true;ending.Show(scoreRun); }
+            if(ending.IsOpen || ending.Confirming)return;
             if ((presentation != null && presentation.IsOpen) || (relicRack != null && relicRack.IsOpen) ||
-                (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
+                (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen) || (workshop != null && workshop.IsOpen)) return;
             HandleKeyboard();
             if (session.Phase == BlackjackPhase.DealerTurn)
             {
@@ -154,7 +162,7 @@ namespace DoubleDown.Presentation
 
         private void TryDeal()
         {
-            if (scoreAnimation < 1f || (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen)) return;
+            if (scoreAnimation < 1f || (shop != null && shop.IsOpen) || (bossView != null && bossView.IsOpen) || (workshop != null && workshop.IsOpen)) return;
             if (session.Phase != BlackjackPhase.Ready && session.Phase != BlackjackPhase.Settled) return;
             if (scoreRun.State == ScoreRunState.Won)
             {
@@ -175,6 +183,8 @@ namespace DoubleDown.Presentation
                 session.EventRaised -= OnGameEvent;
                 session = new BlackjackSession(rulesAsset.ToRules(), runSeed + (uint)session.RoundIndex);
                 session.EventRaised += OnGameEvent;
+                defeatShown=false;
+                inventory.Reset();
                 scoreRun.Restart();
                 formulaText.text = "0"; multiplierText.text = "1";
                 shop.ResetRun();
@@ -195,13 +205,15 @@ namespace DoubleDown.Presentation
                 return;
             }
             currentBoss = bosses.ForRound(scoreRun.Round);
-            session.ConfigureTable(currentBoss?.PlayerAcesLow ?? false, currentBoss?.DealerStandTotal ?? 17);
+            session.ConfigureTable(currentBoss?.PlayerAcesLow ?? false, currentBoss?.DealerStandTotal ?? 17,
+                !(currentBoss?.DisableDouble ?? false), !(currentBoss?.DisableSplit ?? false));
             if (currentBoss.HasValue && bossView.PresentedRound != scoreRun.Round)
             {
                 bossView.Show(currentBoss.Value, scoreRun.Round, scoreRun.HandLimit, scoreRun.Goal, TryDeal);
                 RefreshHud();
                 return;
             }
+            session.ConfigureDeck(inventory.Deck.Snapshot());
             if (!session.StartRound(selectedWager)) RefreshHud();
         }
 
@@ -229,6 +241,7 @@ namespace DoubleDown.Presentation
         private void RecordScore()
         {
             var activations = new List<int>();
+            var destroyed = new HashSet<int>();
             var hands = new ScoreBreakdown[session.Hands.Count];
             for (var i = 0; i < hands.Length; i++)
             {
@@ -237,8 +250,12 @@ namespace DoubleDown.Presentation
                     hand.Cards.Count, hand.Stake, scoreRules);
                 if (hand.Outcome == HandOutcome.Win || hand.Outcome == HandOutcome.Blackjack) winStreak++;
                 else if (hand.Outcome == HandOutcome.Loss) winStreak = 0;
-                hands[i] = RelicEngine.Apply(hands[i], hand, relicRack.Loadout, winStreak, activations);
+                hands[i] = CardModificationEngine.Apply(hands[i], hand, inventory.Deck, currentBoss?.DebuffedSuit ?? -1, out var gold, destroyed);
+                shop.Economy.GrantGold(gold);
+                hands[i] = RelicEngine.Apply(hands[i], hand, relicRack.Loadout, winStreak, activations,
+                    (card, suit) => inventory.Deck.MatchesSuit(card, suit, currentBoss?.DebuffedSuit ?? -1));
             }
+            foreach(var id in destroyed) inventory.Deck.DestroyScoredCard(id);
             relicRack.Activate(activations);
             scoreBeforeAnimation = scoreRun.Score;
             scoreGain = scoreRun.RecordDeal(hands);
@@ -252,7 +269,7 @@ namespace DoubleDown.Presentation
                 foreach (var card in hand.Cards)
                     if (visibleCards.TryGetValue(card, out var visual))
                     {
-                        visual.SetEdition(hand.Outcome == HandOutcome.Blackjack ? 2f : hand.Outcome == HandOutcome.Win ? 1f : 0f);
+                        visual.SetEdition(inventory.Deck.Find(card.InstanceId)?[CardLayer.Edition]?.visualEdition ?? 0);
                         if (hand.Outcome != HandOutcome.Loss) scoringCards.Add(visual);
                     }
             if (backdropMaterial != null) backdropMaterial.SetFloat("_State",
@@ -331,6 +348,7 @@ namespace DoubleDown.Presentation
             usedCards++;
             visual.name = card.SpriteName;
             visual.Initialize(card, sprite, cardBack, cardInkMaterial, usedCards);
+            visual.SetEdition(inventory.Deck.Find(card.InstanceId)?[CardLayer.Edition]?.visualEdition ?? 0);
             visibleCards.Add(card, visual);
             return visual;
         }
@@ -526,13 +544,19 @@ namespace DoubleDown.Presentation
             relicRack = gameObject.AddComponent<RelicRack>();
             relicRack.Initialize(canvas, fontAsset, () => session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled);
             shop = gameObject.AddComponent<RunShop>();
-            shop.Initialize(canvas, fontAsset, unchecked((int)runSeed));
-            shop.Changed += RefreshHud;
+            shop.Initialize(canvas, fontAsset, unchecked((int)runSeed), inventory);
+            shop.Changed += () => { relicRack.SetCapacity(inventory.RelicCapacity); RefreshHud(); };
+            shop.RoundRewarded += () => session.GrantBankroll(inventory.Bonus(VoucherEffect.Bankroll));
+            workshop = gameObject.AddComponent<DeckWorkshop>();
+            workshop.Initialize(canvas, fontAsset, inventory,
+                () => scoreAnimation >= 1 && (session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled), card => spriteByName[card.SpriteName]);
+            workshop.Changed += RefreshHud;
             relicRack.Owns = shop.Economy.Owns;
             presentation = gameObject.AddComponent<TablePresentation>();
             presentation.Initialize(canvas, fontAsset, backdropMaterial);
             bossView = gameObject.AddComponent<BossEncounterView>();
             bossView.Initialize(canvas, fontAsset);
+            ending=gameObject.AddComponent<RunEndView>();ending.Initialize(canvas,fontAsset,TryDeal);
         }
 
         private static Image MakePanel(Transform parent, string name, float x, float y,

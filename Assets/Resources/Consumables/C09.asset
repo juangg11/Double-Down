@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e51ffee010487baf7e4e4bd529d633, type: 3}
+  m_Name: C09
+  m_EditorClassIdentifier: DoubleDown.Runtime::DoubleDown.Scoring.ConsumableDefinition
+  id: "C09"
+  displayName: "LAMINA"
+  description: "EDICION: +12 BASE POR CARTA. REEMPLAZA SU MISMA CAPA."
+  icon: {fileID: 21300000, guid: 37534372b4ea438594b59b99a8364ee7, type: 3}
+  effect: 5
+  suit: 0
+  modification: {fileID: 11400000, guid: 6c2d177fb9ed45da8662a79d69963907, type: 2}

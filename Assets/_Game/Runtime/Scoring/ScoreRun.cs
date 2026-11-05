@@ -76,6 +76,9 @@ namespace DoubleDown.Scoring
     {
         private readonly ScoreRules rules;
         private readonly Func<int, int> handLimitForRound;
+        private readonly Func<int> extraHands;
+        private readonly Func<int, double> goalFactor;
+        public BigNumber HighestHand { get; private set; }
         public int Round { get; private set; } = 1;
         public int HandsRemaining { get; private set; }
         public int HandLimit { get; private set; }
@@ -84,8 +87,9 @@ namespace DoubleDown.Scoring
         public BigNumber RunTotal { get; private set; }
         public ScoreRunState State { get; private set; } = ScoreRunState.Playing;
 
-        public ScoreRun(ScoreRules rules, Func<int, int> handLimitForRound = null)
+        public ScoreRun(ScoreRules rules, Func<int, int> handLimitForRound = null, Func<int> extraHands = null, Func<int, double> goalFactor = null)
         {
+            this.extraHands = extraHands; this.goalFactor = goalFactor;
             this.rules = rules;
             this.handLimitForRound = handLimitForRound;
             ResetRound();
@@ -96,7 +100,7 @@ namespace DoubleDown.Scoring
             if (State != ScoreRunState.Playing || hands == null || hands.Count == 0)
                 throw new InvalidOperationException("No active scoring hand.");
             var amount = BigNumber.Zero;
-            foreach (var hand in hands) amount += hand.Total;
+            foreach (var hand in hands) { amount += hand.Total; if (hand.Total > HighestHand) HighestHand = hand.Total; }
             HandsRemaining--;
             Score += amount;
             RunTotal += amount;
@@ -115,6 +119,7 @@ namespace DoubleDown.Scoring
 
         public void Restart()
         {
+            HighestHand = BigNumber.Zero;
             Round = 1;
             RunTotal = BigNumber.Zero;
             ResetRound();
@@ -126,9 +131,10 @@ namespace DoubleDown.Scoring
         {
             var limit = handLimitForRound?.Invoke(Round) ?? 0;
             if (limit < 0) throw new ArgumentOutOfRangeException(nameof(handLimitForRound));
-            HandLimit = limit == 0 ? rules.HandsPerRound : Math.Min(rules.HandsPerRound, limit);
+            var totalHands = rules.HandsPerRound + (extraHands?.Invoke() ?? 0);
+            HandLimit = limit == 0 ? totalHands : Math.Min(totalHands, limit);
             HandsRemaining = HandLimit;
-            Goal = BigNumber.From(rules.FirstGoal) * BigNumber.Pow(rules.GoalGrowth, Round - 1);
+            Goal = BigNumber.From(rules.FirstGoal) * BigNumber.Pow(rules.GoalGrowth, Round - 1) * (goalFactor?.Invoke(Round) ?? 1);
             Score = BigNumber.Zero;
             State = ScoreRunState.Playing;
         }

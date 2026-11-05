@@ -242,6 +242,79 @@ namespace DoubleDown.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator PhaseSixShopAndWorkshopApplyPurchasesToTheRun()
+        {
+            SceneManager.LoadScene("BlackjackTable");yield return new WaitForSecondsRealtime(0.8f);
+            var controller=Object.FindFirstObjectByType<BlackjackTableController>();
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+            var session=(DoubleDown.Blackjack.BlackjackSession)typeof(BlackjackTableController).GetField("session",flags).GetValue(controller);
+            var inventory=(DoubleDown.Scoring.RunInventory)typeof(BlackjackTableController).GetField("inventory",flags).GetValue(controller);
+            var scoring=(DoubleDown.Scoring.ScoreRun)typeof(BlackjackTableController).GetField("scoreRun",flags).GetValue(controller);
+            if(session.Phase==DoubleDown.Blackjack.BlackjackPhase.Insurance)session.ChooseInsurance(false);
+            if(session.Phase==DoubleDown.Blackjack.BlackjackPhase.PlayerTurn)session.Stand();
+            while(session.Phase==DoubleDown.Blackjack.BlackjackPhase.DealerTurn)session.AdvanceDealerStep();
+            yield return new WaitForSecondsRealtime(1.2f);
+            if(scoring.State==DoubleDown.Scoring.ScoreRunState.Playing)scoring.RecordDeal(new[]{new DoubleDown.Scoring.ScoreBreakdown(DoubleDown.Scoring.BigNumber.From(999),1)});
+            GameObject.Find("Blackjack HUD").transform.Find("Action Panel/Deal").GetComponent<Button>().onClick.Invoke();
+            var shop=Object.FindFirstObjectByType<RunShop>();Assert.IsTrue(shop.IsOpen);shop.Economy.GrantGold(100);
+            var shopRoot=GameObject.Find("Run Shop").transform;
+            shopRoot.Find("Tab 1").GetComponent<Button>().onClick.Invoke();
+            var item=shop.ConsumableOffers[0];Assert.NotNull(item);
+            shopRoot.Find("Offer 0/Buy").GetComponent<Button>().onClick.Invoke();Assert.AreEqual(1,inventory.Consumables.Count);
+            yield return new WaitForSecondsRealtime(0.3f);Capture("Phase6Consumables.png");
+            shopRoot.Find("Tab 2").GetComponent<Button>().onClick.Invoke();
+            var voucher=shop.VoucherOffers[0];Assert.NotNull(voucher);
+            shopRoot.Find("Offer 0/Buy").GetComponent<Button>().onClick.Invoke();Assert.IsTrue(inventory.OwnsVoucher(voucher.id));
+            yield return new WaitForSecondsRealtime(0.3f);Capture("Phase6Vouchers.png");
+            var workshop=Object.FindFirstObjectByType<DeckWorkshop>();workshop.Toggle();
+            var body=GameObject.Find("Deck Workshop").transform.Find("Body");
+            var target=0;while(!inventory.Deck.CanUse(item,inventory.Deck.Cards[target].Card.InstanceId))target++;
+            Assert.Less(target,18);body.Find("Card "+target).GetComponent<Button>().onClick.Invoke();
+            body.Find("Consumable 0").GetComponent<Button>().onClick.Invoke();
+            yield return new WaitForSecondsRealtime(0.3f);Capture("Phase6Deck.png");
+            var apply=body.Find("Apply").GetComponent<Button>();Assert.IsTrue(apply.interactable);apply.onClick.Invoke();Assert.AreEqual(0,inventory.Consumables.Count);
+            body.Find("Next").GetComponent<Button>().onClick.Invoke();StringAssert.Contains("2/",body.Find("Page").GetComponent<Text>().text);
+            workshop.Toggle();
+            shopRoot.Find("Continue").GetComponent<Button>().onClick.Invoke();Assert.AreEqual(2,scoring.Round);
+            yield return new WaitForSecondsRealtime(0.8f);Assert.AreNotEqual(DoubleDown.Blackjack.BlackjackPhase.Ready,session.Phase);
+            workshop.Toggle();body=GameObject.Find("Deck Workshop").transform.Find("Body");Assert.IsFalse(body.Find("Apply").GetComponent<Button>().interactable);
+            workshop.Toggle();
+            var rack=Object.FindFirstObjectByType<RelicRack>();rack.Toggle();
+            var collection=GameObject.Find("Relic Collection").transform.Find("Body");
+            collection.Find("Next Page").GetComponent<Button>().onClick.Invoke();
+            Assert.IsTrue(collection.Find("Relic 15").gameObject.activeInHierarchy);Assert.IsFalse(collection.Find("Relic 00").gameObject.activeInHierarchy);
+            yield return new WaitForSecondsRealtime(0.3f);Capture("Phase6Collection.png");
+        }
+
+        [UnityTest]
+        public IEnumerator PortfolioMenuHelpDefeatRetryAndReturnToMenuWork()
+        {
+            SceneManager.LoadScene("MainMenu");yield return new WaitForSecondsRealtime(0.8f);
+            var menu=Object.FindFirstObjectByType<PortfolioMenu>();Assert.NotNull(menu);Capture("PortfolioMenu.png");
+            var hud=GameObject.Find("Main Menu HUD").transform;
+            hud.Find("How To Play").GetComponent<Button>().onClick.Invoke();Assert.IsTrue(menu.ModalOpen);
+            yield return new WaitForSecondsRealtime(0.3f);Capture("PortfolioHelp.png");
+            GameObject.Find("How To Play Panel").transform.Find("Body/Back").GetComponent<Button>().onClick.Invoke();Assert.IsFalse(menu.ModalOpen);
+            hud.Find("New Run").GetComponent<Button>().onClick.Invoke();yield return new WaitForSecondsRealtime(0.8f);
+            var controller=Object.FindFirstObjectByType<BlackjackTableController>();Assert.NotNull(controller);
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+            var session=(DoubleDown.Blackjack.BlackjackSession)typeof(BlackjackTableController).GetField("session",flags).GetValue(controller);
+            var score=(DoubleDown.Scoring.ScoreRun)typeof(BlackjackTableController).GetField("scoreRun",flags).GetValue(controller);
+            if(session.Phase==DoubleDown.Blackjack.BlackjackPhase.Insurance)session.ChooseInsurance(false);
+            if(session.Phase==DoubleDown.Blackjack.BlackjackPhase.PlayerTurn)session.Stand();
+            while(session.Phase==DoubleDown.Blackjack.BlackjackPhase.DealerTurn)session.AdvanceDealerStep();
+            score.Forfeit();yield return new WaitForSecondsRealtime(1.2f);
+            var ending=Object.FindFirstObjectByType<RunEndView>();Assert.IsTrue(ending.IsOpen);Capture("PortfolioDefeat.png");
+            GameObject.Find("Run End").transform.Find("Body/Retry").GetComponent<Button>().onClick.Invoke();Assert.IsFalse(ending.IsOpen);Assert.AreEqual(1,score.Round);
+            yield return new WaitForSecondsRealtime(0.8f);
+            var settings=Object.FindFirstObjectByType<TablePresentation>();settings.Toggle();
+            GameObject.Find("Presentation Settings").transform.Find("Settings Body/Main Menu").GetComponent<Button>().onClick.Invoke();Assert.IsTrue(ending.Confirming);
+            GameObject.Find("Leave Run").transform.Find("Body/Cancel").GetComponent<Button>().onClick.Invoke();Assert.IsFalse(ending.Confirming);
+            ending.ConfirmLeave();GameObject.Find("Leave Run").transform.Find("Body/Confirm").GetComponent<Button>().onClick.Invoke();
+            yield return new WaitForSecondsRealtime(0.8f);Assert.NotNull(Object.FindFirstObjectByType<PortfolioMenu>());
+        }
+
         private static void Capture(string filename)
         {
             var directory = System.Environment.GetEnvironmentVariable("DOUBLEDOWN_CAPTURE_DIR");

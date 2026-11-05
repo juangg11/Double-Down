@@ -57,6 +57,22 @@ namespace DoubleDown.Blackjack
         private readonly List<BlackjackHand> hands = new List<BlackjackHand>(4);
         private readonly List<PlayingCard> dealer = new List<PlayingCard>(11);
         private BlackjackDeck deck;
+        private PlayingCard[] runDeck;
+        private bool allowDouble = true, allowSplit = true;
+        public bool ConfigureDeck(IReadOnlyList<PlayingCard> cards)
+        {
+            if (Phase != BlackjackPhase.Ready && Phase != BlackjackPhase.Settled) return false;
+            if (cards == null || cards.Count < 4) throw new ArgumentException("A deck needs at least four cards.");
+            var ids = new HashSet<int>();
+            foreach (var card in cards) if (card.InstanceId <= 0 || !ids.Add(card.InstanceId)) throw new ArgumentException("Deck card IDs must be unique and positive.");
+            runDeck = new PlayingCard[cards.Count]; for (var i = 0; i < cards.Count; i++) runDeck[i] = cards[i];
+            return true;
+        }
+        public void GrantBankroll(long amount)
+        {
+            if (amount < 0 || (Phase != BlackjackPhase.Ready && Phase != BlackjackPhase.Settled)) throw new InvalidOperationException("Bankroll grants occur between hands.");
+            Bankroll = checked(Bankroll + amount);
+        }
         private long bankrollBeforeRound;
         private bool playerAcesLow;
         private int dealerStandTotal = 17;
@@ -64,10 +80,11 @@ namespace DoubleDown.Blackjack
         public int DealerStandTotal => dealerStandTotal;
 
         // Table rules change only between deals; they never reset bankroll or the deck seed.
-        public bool ConfigureTable(bool acesLow = false, int dealerStand = 17)
+        public bool ConfigureTable(bool acesLow = false, int dealerStand = 17, bool canDouble = true, bool canSplit = true)
         {
             if (dealerStand < 17 || dealerStand > 20) throw new ArgumentOutOfRangeException(nameof(dealerStand));
             if (Phase != BlackjackPhase.Ready && Phase != BlackjackPhase.Settled) return false;
+            allowDouble = canDouble; allowSplit = canSplit;
             playerAcesLow = acesLow;
             dealerStandTotal = dealerStand;
             return true;
@@ -107,6 +124,7 @@ namespace DoubleDown.Blackjack
 
             deck = RoundIndex == 0 && firstRoundDrawOrder != null
                 ? new BlackjackDeck(firstRoundDrawOrder)
+                : runDeck != null ? new BlackjackDeck(runDeck, seed + (uint)RoundIndex * 0x9E3779B9u)
                 : new BlackjackDeck(seed + (uint)RoundIndex * 0x9E3779B9u);
             RoundIndex++;
             bankrollBeforeRound = Bankroll;
@@ -152,12 +170,12 @@ namespace DoubleDown.Blackjack
             return true;
         }
 
-        public bool CanHit => Phase == BlackjackPhase.PlayerTurn && !ActiveHand.IsFinished;
-        public bool CanStand => CanHit;
-        public bool CanDouble => CanHit && ActiveHand.Cards.Count == 2 &&
+        public bool CanStand => Phase == BlackjackPhase.PlayerTurn && !ActiveHand.IsFinished;
+        public bool CanHit => CanStand && deck.Remaining > 0;
+        public bool CanDouble => allowDouble && CanHit && ActiveHand.Cards.Count == 2 &&
                                  Bankroll >= ActiveHand.Stake &&
                                  (!ActiveHand.IsSplit || rules.AllowDoubleAfterSplit);
-        public bool CanSplit => CanHit && ActiveHand.Cards.Count == 2 &&
+        public bool CanSplit => allowSplit && CanHit && deck.Remaining >= 2 && ActiveHand.Cards.Count == 2 &&
                                 hands.Count < rules.MaximumSplitHands &&
                                 Bankroll >= ActiveHand.Stake &&
                                 ActiveHand.Cards[0].BlackjackValue == ActiveHand.Cards[1].BlackjackValue;
@@ -296,8 +314,8 @@ namespace DoubleDown.Blackjack
         private bool ShouldDealerHit()
         {
             var value = DealerValue;
-            return value.Total < dealerStandTotal ||
-                   (value.Total == 17 && value.IsSoft && rules.DealerHitsSoft17);
+            return deck.Remaining > 0 && (value.Total < dealerStandTotal ||
+                   (value.Total == 17 && value.IsSoft && rules.DealerHitsSoft17));
         }
 
         private void RevealHole()

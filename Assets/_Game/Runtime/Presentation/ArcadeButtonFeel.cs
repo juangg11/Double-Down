@@ -36,6 +36,8 @@ namespace DoubleDown.Presentation
             origin = rect.anchoredPosition;
         }
 
+        public void SetTint(Color color) { resting=color; if(face!=null)face.color=color; }
+
         private void OnEnable() { if (shadow != null) shadow.enabled = true; }
         private void OnDisable()
         {

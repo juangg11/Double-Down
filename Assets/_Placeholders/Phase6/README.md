@@ -1,0 +1,1 @@
+Provisional Phase 6 symbols approved by the user. Copies of the supplied Kenney board-game icons (CC0), already imported in Resources/TablePresentation/Icons. PH_ filenames correspond to docs/PHASE_6_CONTENT_PROPOSAL.md. Replace images keeping .meta GUIDs. These are not final item artwork.

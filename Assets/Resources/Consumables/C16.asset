@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e51ffee010487baf7e4e4bd529d633, type: 3}
+  m_Name: C16
+  m_EditorClassIdentifier: DoubleDown.Runtime::DoubleDown.Scoring.ConsumableDefinition
+  id: "C16"
+  displayName: "VIDRIO"
+  description: "MEJORA: \u00d71,5 MULT; SE DESTRUYE AL PUNTUAR. REEMPLAZA SU MISMA CAPA. CON 24 CARTAS SE CONSUME SOLO LA MEJORA."
+  icon: {fileID: 21300000, guid: 8385bb462a4b4204be28c61d318205cf, type: 3}
+  effect: 5
+  suit: 0
+  modification: {fileID: 11400000, guid: 8a557476bb0c441a9362158313a1ec3f, type: 2}
