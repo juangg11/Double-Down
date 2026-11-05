@@ -54,8 +54,12 @@ namespace DoubleDown.Presentation
             Button(body.transform, "Controls", "CONTROLES", 210, 186, () => controlMenu.Show(), 170);
             Button(body.transform, "Display", "VENTANA / COMPLETA", 20, 228, () =>
             {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                Screen.fullScreen=!Screen.fullScreen;
+#else
                 var mode=Screen.fullScreenMode==FullScreenMode.Windowed?FullScreenMode.FullScreenWindow:FullScreenMode.Windowed;
                 Screen.SetResolution(mode==FullScreenMode.Windowed?1280:Display.main.systemWidth,mode==FullScreenMode.Windowed?720:Display.main.systemHeight,mode);
+#endif
             },170);
             if(GetComponent<BlackjackTableController>()!=null)
                 Button(body.transform,"Main Menu","MENU PRINCIPAL",210,228,()=>GetComponent<RunEndView>().ConfirmLeave(),170);
@@ -93,7 +97,11 @@ namespace DoubleDown.Presentation
             SetLabel(body,"Volume","VOLUMEN +","VOLUME +");
             SetLabel(body,"Motion","MOVIMIENTO","MOTION");
             SetLabel(body,"Controls","CONTROLES","CONTROLS");
+#if UNITY_WEBGL && !UNITY_EDITOR
+            SetLabel(body,"Display","PANTALLA COMPLETA","FULLSCREEN");
+#else
             SetLabel(body,"Display","VENTANA / COMPLETA","WINDOW / FULLSCREEN");
+#endif
             if(body.Find("Main Menu")!=null)SetLabel(body,"Main Menu","MENU PRINCIPAL","MAIN MENU");
             SetLabel(body,"Close","VOLVER","BACK");
             var shortcut=drawer.transform.parent.Find("Open Settings/Label");

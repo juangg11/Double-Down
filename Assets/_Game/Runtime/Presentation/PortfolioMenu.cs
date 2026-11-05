@@ -26,8 +26,12 @@ namespace DoubleDown.Presentation
             ui.Button(canvas.transform,"How To Play","COMO JUGAR",44,226,112,30,()=>Open(help));
             ui.Button(canvas.transform,"Settings","AJUSTES",168,226,112,30,()=>GetComponent<TablePresentation>().Toggle());
             ui.Button(canvas.transform,"Credits","CREDITOS",44,270,112,30,()=>Open(credits));
+#if UNITY_WEBGL && !UNITY_EDITOR
+            ui.Button(canvas.transform,"Language","ENGLISH",168,270,112,30,()=>{GameLanguage.Toggle();RefreshLanguage();});
+#else
             ui.Button(canvas.transform,"Quit","SALIR",168,270,112,30,Application.Quit);
             ui.Button(canvas.transform,"Language","ENGLISH",168,310,112,26,()=>{GameLanguage.Toggle();RefreshLanguage();});
+#endif
             ui.Text(canvas.transform,"Version","v0.1.1",44,332,110,20);
             for(var i=0;i<decoration.Length;i++)
             {
@@ -67,7 +71,11 @@ namespace DoubleDown.Presentation
                 "DOUBLE DOWN / JUANGG11\n\nCARDS, SYMBOLS AND SFX: KENNEY / CC0.\nUI: CRUSENHO AGUS HENNIHUNO / CC BY 4.0.\nCRUSENHO.ITCH.IO / ADAPTED TINTS AND SCALE.\nKEYS: GERALD'S KEYS / CC0.\nFONT: THALEAH / TINY WORLDS.\n\nITEM ICONS ARE TEMPORARY.\nLICENSES AND CREDITS ARE IN THE PACKAGE.");
             GetComponent<TablePresentation>().RefreshLanguage();
         }
-        private void Set(string name,string es,string en) => canvas.transform.Find(name+"/Label").GetComponent<UnityEngine.UI.Text>().text=GameLanguage.Pick(es,en);
+        private void Set(string name,string es,string en)
+        {
+            var label=canvas.transform.Find(name+"/Label");
+            if(label!=null)label.GetComponent<UnityEngine.UI.Text>().text=GameLanguage.Pick(es,en);
+        }
         private static void SetModal(GameObject root,string titleEs,string titleEn,string bodyEs,string bodyEn)
         {
             var body=root.transform.Find("Body");

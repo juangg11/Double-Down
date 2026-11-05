@@ -304,6 +304,28 @@ namespace DoubleDown.Tests
         }
 
         [UnityTest]
+        public IEnumerator PrismConsumableChangesCardShaderEdition()
+        {
+            SceneManager.LoadScene("BlackjackTable");yield return new WaitForSecondsRealtime(0.6f);
+            ChooseStarter();
+            var controller=Object.FindFirstObjectByType<BlackjackTableController>();
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+            var session=(DoubleDown.Blackjack.BlackjackSession)typeof(BlackjackTableController).GetField("session",flags).GetValue(controller);
+            var inventory=(DoubleDown.Scoring.RunInventory)typeof(BlackjackTableController).GetField("inventory",flags).GetValue(controller);
+            var card=session.Hands[0].Cards[0];
+            var prism=System.Array.Find(Resources.LoadAll<DoubleDown.Scoring.ConsumableDefinition>("Consumables"),x=>x.id=="C10");
+            Assert.IsTrue(inventory.Deck.Use(prism,card.InstanceId));
+            Assert.AreEqual(2,inventory.Deck.Find(card.InstanceId)[DoubleDown.Scoring.CardLayer.Edition].visualEdition);
+            if(session.Phase==DoubleDown.Blackjack.BlackjackPhase.Insurance)session.ChooseInsurance(false);
+            if(session.Phase==DoubleDown.Blackjack.BlackjackPhase.PlayerTurn)session.Stand();
+            while(session.Phase==DoubleDown.Blackjack.BlackjackPhase.DealerTurn)session.AdvanceDealerStep();
+            var visuals=(Dictionary<DoubleDown.Blackjack.PlayingCard,BlackjackCardVisual>)typeof(BlackjackTableController).GetField("visibleCards",flags).GetValue(controller);
+            var block=new MaterialPropertyBlock();visuals[card].GetComponent<SpriteRenderer>().GetPropertyBlock(block);
+            Assert.AreEqual(2f,block.GetFloat("_Edition"));
+            yield return new WaitForSecondsRealtime(0.3f);Capture("PrismaticCard.png");
+        }
+
+        [UnityTest]
         public IEnumerator FullRelicRackDisablesShopPurchase()
         {
             SceneManager.LoadScene("BlackjackTable");yield return new WaitForSecondsRealtime(0.6f);

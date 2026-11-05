@@ -58,7 +58,7 @@ title = "DOUBLE DOWN"
 box = draw.textbbox((0, 0), title, font=font)
 tw = box[2] - box[0]
 tx = (315 - tw) // 2
-ty = 86 - box[1]
+ty = (250 - (box[3] - box[1])) // 2 - box[1]
 draw.text((tx + 2, ty + 3), title, font=font, fill=(4, 13, 26), stroke_width=3, stroke_fill=(4, 13, 26))
 draw.text((tx, ty), title, font=font, fill=(255, 218, 154), stroke_width=1, stroke_fill=(21, 44, 58))
 capsule.resize((630, 500), Image.Resampling.NEAREST).save(OUT / "DoubleDown_Capsule_630x500.png", optimize=True)
