@@ -24,3 +24,5 @@
 ## Fase 6 y edición de portfolio (noviembre 2026)
 
 Se conserva el zapato compartido de blackjack: los cambios del mazo afectan también a las cartas que recibe la banca, pero sus efectos de puntuación son exclusivos del jugador. Las cartas duplicadas reciben identidades nuevas. El mínimo de 24 evita mazos inutilizables; al llegar a él, una mejora destructiva se consume en lugar de eliminar la carta. La edición de portfolio incluye menú y derrota antes de la Fase 8 para poder distribuir un recorrido completo. No incluye guardado de runs ni metaprogresión de Fase 7.
+
+En la versión 0.1.1 se eliminan las cuatro reliquias iniciales fijas. Cada run ofrece tres opciones gratuitas y equipa la elegida; las compras posteriores se equipan en el primer hueco libre. Las ofertas quedan desactivadas si faltan oro o huecos. El botón de idioma del menú guarda la preferencia y cambia los textos de interfaz y las explicaciones de efectos; los nombres propios de objetos siguen en español.

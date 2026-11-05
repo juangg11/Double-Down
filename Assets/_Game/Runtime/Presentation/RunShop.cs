@@ -58,7 +58,7 @@ namespace DoubleDown.Presentation
             heading=Text(root.transform,"Heading","",12,8,432,22);
             for(var i=0;i<3;i++)
             {
-                var t=i;tabs[i]=Button(root.transform,"Tab "+i,new[]{"RELIQUIAS","CONSUMIBLES","VALES"}[i],12+i*146,32,140,22,()=>{tab=t;Refresh();});
+                var t=i;tabs[i]=Button(root.transform,"Tab "+i,GameLanguage.English?new[]{"RELICS","CONSUMABLES","VOUCHERS"}[i]:new[]{"RELIQUIAS","CONSUMIBLES","VALES"}[i],12+i*146,32,140,22,()=>{tab=t;Refresh();});
             }
             for(var i=0;i<3;i++)
             {
@@ -67,13 +67,13 @@ namespace DoubleDown.Presentation
                 CasinoUiSkin.Surface(card.GetComponent<Image>(), "Frame", CasinoUiSkin.Felt);
                 icons[i]=Panel(card.transform,"Icon",60,4,20,20,Color.white).GetComponent<Image>();
                 names[i]=Text(card.transform,"Name","",6,26,128,30);names[i].alignment=TextAnchor.MiddleCenter;
-                descriptions[i]=Text(card.transform,"Effect","",6,56,128,32);
-                Button(card.transform,"Details","DETALLE",6,88,128,18,()=>Inspect(index));
+                descriptions[i]=Text(card.transform,"Effect","",6,56,128,50);
+                descriptions[i].fontSize=12;
                 buy[i]=Button(card.transform,"Buy","",6,108,128,24,()=>BuyOffer(index));
             }
-            status=Text(root.transform,"Status","EQUIPA TUS RELIQUIAS",12,202,432,20);
+            status=Text(root.transform,"Status","",12,202,432,20);
             reroll=Button(root.transform,"Reroll","",12,224,128,28,()=>{if(Economy.Reroll())RollContent();Refresh();});
-            Button(root.transform,"Continue","SIGUIENTE RONDA",158,224,286,28,LeaveShop);
+            Button(root.transform,"Continue",GameLanguage.Pick("SIGUIENTE RONDA","NEXT ROUND"),158,224,286,28,LeaveShop);
             inspection=Panel(canvas.transform,"Shop Inspection",0,0,640,360,new Color(0,0,0,0.85f));
             var info=Panel(inspection.transform,"Body",120,78,400,204,CasinoUiSkin.Ink);
             CasinoUiSkin.Surface(info.GetComponent<Image>(),"Frame",CasinoUiSkin.Ink);
@@ -131,32 +131,36 @@ namespace DoubleDown.Presentation
         private void BuyOffer(int index)
         {
             if(!IsOpen)return;
-            if(tab==0)Economy.Buy(index);
+            if(tab==0)
+            {
+                var rack=GetComponent<RelicRack>();
+                var relic=Array.Find(catalog,r=>r.id==Economy.Offers[index]);
+                if(rack!=null && rack.HasEmptySlot && Economy.Buy(index)) rack.EquipFirstFree(relic);
+            }
             else if(tab==1 && inventory.Buy(consumableOffers[index],Economy,ConsumablePrice))consumableOffers[index]=null;
             else if(tab==2 && inventory.Buy(voucherOffers[index],Economy,VoucherPrice)) {voucherOffers[index]=null;SyncBonuses();}
             Refresh();
         }
         private void Refresh()
         {
-            heading.text=$"TIENDA  /  ORO {Economy.Gold}  /  PREMIO +{Economy.LastReward}";
+            heading.text=$"{GameLanguage.Pick("TIENDA","SHOP")}  /  {GameLanguage.Pick("ORO","GOLD")} {Economy.Gold}  /  {GameLanguage.Pick("PREMIO","REWARD")} +{Economy.LastReward}";
             for(var i=0;i<3;i++)
             {
                 tabs[i].interactable=i!=tab;
                 var relic=Array.Find(catalog,r=>r.id==Economy.Offers[i]);
                 var c=consumableOffers[i];var v=voucherOffers[i];
                 var available=tab==0?relic!=null:tab==1?c!=null:v!=null;
-                names[i].text=!available?"AGOTADO":tab==0?relic.displayName:tab==1?c.displayName:v.displayName;
-                descriptions[i].text=!available?"":tab==0?relic.description:tab==1?c.description:v.description;
-                if(descriptions[i].text.Length>42)descriptions[i].text=descriptions[i].text.Substring(0,39)+"...";
+                names[i].text=!available?GameLanguage.Pick("AGOTADO","SOLD OUT"):tab==0?relic.displayName:tab==1?c.displayName:v.displayName;
+                descriptions[i].text=!available?"":tab==0?GameLanguage.RelicEffect(relic):tab==1?GameLanguage.ConsumableEffect(c):GameLanguage.VoucherEffect(v);
                 icons[i].enabled=available;
                 if(available)icons[i].sprite=tab==0?relic.icon:tab==1?c.icon:v.icon;
                 var price=tab==0?Economy.RelicPrice:tab==1?ConsumablePrice:VoucherPrice;
-                buy[i].interactable=available && Economy.Gold>=price && (tab!=1 || inventory.Consumables.Count<inventory.ConsumableCapacity) && (tab!=2 || inventory.CanBuy(v));
-                buy[i].GetComponentInChildren<Text>().text=!available?"AGOTADO":$"COMPRAR {price}";
+                buy[i].interactable=available && Economy.Gold>=price && (tab!=0 || GetComponent<RelicRack>().HasEmptySlot) && (tab!=1 || inventory.Consumables.Count<inventory.ConsumableCapacity) && (tab!=2 || inventory.CanBuy(v));
+                buy[i].GetComponentInChildren<Text>().text=!available?GameLanguage.Pick("AGOTADO","SOLD OUT"):$"{GameLanguage.Pick("COMPRAR","BUY")} {price}";
             }
             reroll.interactable=Economy.CanReroll;
-            reroll.GetComponentInChildren<Text>().text=$"RENOVAR {Economy.RerollPrice}";
-            status.text=tab==1?$"BOLSA {inventory.Consumables.Count}/{inventory.ConsumableCapacity} - USA EN MAZO":tab==2?"PERMANENTES DURANTE ESTA RUN":"RENOVAR CAMBIA LAS TRES PESTANAS";
+            reroll.GetComponentInChildren<Text>().text=$"{GameLanguage.Pick("RENOVAR","REROLL")} {Economy.RerollPrice}";
+            status.text=tab==1?$"{GameLanguage.Pick("BOLSA","BAG")} {inventory.Consumables.Count}/{inventory.ConsumableCapacity} - {GameLanguage.Pick("USA EN MAZO","USE IN DECK")}":tab==2?GameLanguage.Pick("PERMANENTES DURANTE ESTA RUN","PERMANENT FOR THIS RUN"):GetComponent<RelicRack>().HasEmptySlot?GameLanguage.Pick("AL COMPRAR, SE EQUIPA AUTOMATICAMENTE","PURCHASES AUTO-EQUIP"):GameLanguage.Pick("SIN HUECOS: REORDENA TUS RELIQUIAS","NO FREE SLOTS: REORDER RELICS");
             Changed?.Invoke();
         }
         private static GameObject Panel(Transform parent,string name,float x,float y,float w,float h,Color color)

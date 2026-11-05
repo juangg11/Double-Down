@@ -1,5 +1,7 @@
 # Simulacion de Fase 6
 
+Simulación anterior al cambio de reliquia inicial de la versión 0.1.1. Detecta bloqueos del ciclo; no mide el balance actual de la elección entre tres reliquias.
+
 2000 runs deterministas: 1000 sin compras y 1000 con compras. Limite de observacion: 60 rondas; no es un limite del juego. Politica: pedir hasta 17, doblar en 11, sin seguro ni division. Compras heuristicas, no jugador optimo.
 
 | Politica | Ronda media | Ronda maxima | Runs que llegan a ronda 10 |

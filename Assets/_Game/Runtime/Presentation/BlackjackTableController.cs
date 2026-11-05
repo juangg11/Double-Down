@@ -40,6 +40,7 @@ namespace DoubleDown.Presentation
         private DeckWorkshop workshop;
         private RunEndView ending;
         private bool defeatShown;
+        private int runAttempt;
         private BossSchedule bosses;
         private BossRule? currentBoss;
         private BossEncounterView bossView;
@@ -117,7 +118,7 @@ namespace DoubleDown.Presentation
             RefreshHud();
         }
 
-        private void Start() => TryDeal();
+        private void Start() { TryDeal(); relicRack.ShowStarterChoice(shop.Economy, unchecked((int)runSeed)); }
 
         private void OnDestroy()
         {
@@ -190,6 +191,7 @@ namespace DoubleDown.Presentation
                 shop.ResetRun();
                 bossView.ResetRun();
                 relicRack.ResetLoadout();
+                relicRack.ShowStarterChoice(shop.Economy, unchecked((int)runSeed + ++runAttempt * 7919));
                 winStreak = 0;
                 selectedWager = rulesAsset.minimumWager;
                 scoreBeforeAnimation = BigNumber.Zero;
@@ -383,24 +385,24 @@ namespace DoubleDown.Presentation
             Number(goldText, shop.Economy.Gold.ToString(), 3);
             wagerText.text = (session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled
                 ? selectedWager : session.Wager).ToString("N0");
-            roundText.text = $"MESA {(scoreRun.Round + 2) / 3} / R{scoreRun.Round}";
-            bossText.text = currentBoss.HasValue ? "JEFE\n" + currentBoss.Value.Name : "";
-            messageText.text = bossView.IsOpen ? "RONDA JEFE"
-                : scoreRun.State == ScoreRunState.Won ? "META SUPERADA"
-                : scoreRun.State == ScoreRunState.Lost ? "RUN TERMINADA"
-                : session.Phase == BlackjackPhase.PlayerTurn ? "TU TURNO"
-                : session.Phase == BlackjackPhase.DealerTurn ? "JUEGA LA BANCA."
-                : PixelText(session.LastMessage);
+            roundText.text = $"{GameLanguage.Pick("MESA","TABLE")} {(scoreRun.Round + 2) / 3} / R{scoreRun.Round}";
+            bossText.text = currentBoss.HasValue ? GameLanguage.Pick("JEFE\n","BOSS\n") + currentBoss.Value.Name : "";
+            messageText.text = bossView.IsOpen ? GameLanguage.Pick("RONDA JEFE","BOSS ROUND")
+                : scoreRun.State == ScoreRunState.Won ? GameLanguage.Pick("META SUPERADA","TARGET REACHED")
+                : scoreRun.State == ScoreRunState.Lost ? GameLanguage.Pick("RUN TERMINADA","RUN OVER")
+                : session.Phase == BlackjackPhase.PlayerTurn ? GameLanguage.Pick("TU TURNO","YOUR TURN")
+                : session.Phase == BlackjackPhase.DealerTurn ? GameLanguage.Pick("JUEGA LA BANCA.","DEALER'S TURN")
+                : PixelText(GameLanguage.SessionMessage(session.LastMessage));
             Number(goalText, scoreRun.Goal.ToString(), 6);
-            handsText.text = "MANOS " + scoreRun.HandsRemaining + "/" + scoreRun.HandLimit;
+            handsText.text = GameLanguage.Pick("MANOS ","HANDS ") + scoreRun.HandsRemaining + "/" + scoreRun.HandLimit;
             DrawScore(scoreAnimation >= 1f ? scoreRun.Score : scoreBeforeAnimation);
-            dealerText.text = session.DealerCards.Count == 0 ? "BANCA\n-"
-                : $"BANCA\n{(session.DealerHoleRevealed ? session.DealerValue.Total.ToString() : session.DealerVisibleTotal + " + ?")}";
-            playerText.text = session.Hands.Count == 0 ? "TUS MANOS\n-"
+            dealerText.text = session.DealerCards.Count == 0 ? GameLanguage.Pick("BANCA\n-","DEALER\n-")
+                : $"{GameLanguage.Pick("BANCA","DEALER")}\n{(session.DealerHoleRevealed ? session.DealerValue.Total.ToString() : session.DealerVisibleTotal + " + ?")}";
+            playerText.text = session.Hands.Count == 0 ? GameLanguage.Pick("TUS MANOS\n-","YOUR HANDS\n-")
                 : session.Hands.Count == 1
-                    ? $"TU MANO\n{session.Hands[0].Value.Total}  {OutcomeLabel(session.Hands[0].Outcome)}"
-                    : $"MANO 1  {session.Hands[0].Value.Total}\n{SplitHandStatus(0)}\n" +
-                      $"MANO 2  {session.Hands[1].Value.Total}\n{SplitHandStatus(1)}";
+                    ? $"{GameLanguage.Pick("TU MANO","YOUR HAND")}\n{session.Hands[0].Value.Total}  {OutcomeLabel(session.Hands[0].Outcome)}"
+                    : $"{GameLanguage.Pick("MANO","HAND")} 1  {session.Hands[0].Value.Total}\n{SplitHandStatus(0)}\n" +
+                      $"{GameLanguage.Pick("MANO","HAND")} 2  {session.Hands[1].Value.Total}\n{SplitHandStatus(1)}";
 
             var betting = session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled;
             dealButton.gameObject.SetActive(betting);
@@ -409,8 +411,8 @@ namespace DoubleDown.Presentation
             dealButton.interactable = session.Bankroll >= rulesAsset.minimumWager;
             if (scoreRun.State == ScoreRunState.Lost) dealButton.interactable = true;
             dealButton.GetComponentInChildren<Text>().text = scoreRun.State == ScoreRunState.Won
-                ? "TIENDA" : scoreRun.State == ScoreRunState.Lost
-                    ? "REINTENTAR" : "REPARTIR";
+                ? GameLanguage.Pick("TIENDA","SHOP") : scoreRun.State == ScoreRunState.Lost
+                    ? GameLanguage.Pick("REINTENTAR","RETRY") : GameLanguage.Pick("REPARTIR","DEAL");
             minusButton.interactable = selectedWager > rulesAsset.minimumWager;
             plusButton.interactable = selectedWager + rulesAsset.minimumWager <= session.Bankroll;
 
@@ -433,19 +435,19 @@ namespace DoubleDown.Presentation
         private string SplitHandStatus(int index)
         {
             var hand = session.Hands[index];
-            if (hand.Value.IsBust) return "PASADA";
+            if (hand.Value.IsBust) return GameLanguage.Pick("PASADA","BUST");
             if (session.Phase != BlackjackPhase.PlayerTurn) return OutcomeLabel(hand.Outcome);
-            if (index == session.ActiveHandIndex) return "TU TURNO";
-            return hand.IsFinished ? "PLANTADA" : "ESPERA";
+            if (index == session.ActiveHandIndex) return GameLanguage.Pick("TU TURNO","YOUR TURN");
+            return hand.IsFinished ? GameLanguage.Pick("PLANTADA","STOOD") : GameLanguage.Pick("ESPERA","WAITING");
         }
 
         private static string OutcomeLabel(HandOutcome outcome) => outcome switch
         {
-            HandOutcome.Win => "GANA",
+            HandOutcome.Win => GameLanguage.Pick("GANA","WIN"),
             HandOutcome.Blackjack => "BLACKJACK",
-            HandOutcome.Push => "EMPATE",
-            HandOutcome.Loss => "PIERDE",
-            _ => "EN JUEGO"
+            HandOutcome.Push => GameLanguage.Pick("EMPATE","PUSH"),
+            HandOutcome.Loss => GameLanguage.Pick("PIERDE","LOSE"),
+            _ => GameLanguage.Pick("EN JUEGO","PLAYING")
         };
 
         private static string PixelText(string value)
@@ -489,13 +491,13 @@ namespace DoubleDown.Presentation
             roundText = MakeText(canvas.transform, "Round", "", 20, 14, 124, 20, 16, CasinoUiSkin.Paper);
             roundText.alignment = TextAnchor.MiddleCenter;
             var goal = MakePanel(canvas.transform, "Goal Panel", 20, 40, 124, 58, CasinoUiSkin.Ink);
-            MakeText(goal.transform, "Caption", "META", 8, 2, 108, 20, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            MakeText(goal.transform, "Caption", GameLanguage.Pick("META","TARGET"), 8, 2, 108, 20, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
             goalText = MakeText(goal.transform, "Goal", "", 8, 22, 108, 32, 32, Gold);
             goalText.alignment = TextAnchor.MiddleCenter;
 
             var meter = MakePanel(canvas.transform, "Score Meter", 20, 106, 124, 116, CasinoUiSkin.Ink);
             scorePanel = meter.GetComponent<RectTransform>();
-            MakeText(meter.transform, "Caption", "PUNTOS", 8, 2, 108, 20, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            MakeText(meter.transform, "Caption", GameLanguage.Pick("PUNTOS","SCORE"), 8, 2, 108, 20, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
             scoreText = MakeText(meter.transform, "Score", "0", 8, 22, 108, 32, 32, CasinoUiSkin.Paper);
             scoreText.alignment = TextAnchor.MiddleCenter;
             var track = MakeStripe(meter.transform, "Progress Track", 12, 57, 100, 4, CasinoUiSkin.Felt);
@@ -513,14 +515,14 @@ namespace DoubleDown.Presentation
             handsText.alignment = TextAnchor.MiddleCenter;
 
             var chips = MakePanel(canvas.transform, "Chips Wallet", 20, 246, 60, 48, CasinoUiSkin.Ink);
-            MakeText(chips.transform, "Caption", "FICHAS", 4, 1, 52, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            MakeText(chips.transform, "Caption", GameLanguage.Pick("FICHAS","CHIPS"), 4, 1, 52, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
             bankrollText = MakeText(chips.transform, "Bankroll", "", 4, 12, 52, 34, 32, CasinoUiSkin.Paper);
             bankrollText.alignment = TextAnchor.MiddleCenter;
             var wallet = MakePanel(canvas.transform, "Gold Wallet", 84, 246, 60, 48, CasinoUiSkin.Ink);
-            MakeText(wallet.transform, "Caption", "ORO", 4, 1, 52, 18, 16, Gold).alignment = TextAnchor.MiddleCenter;
+            MakeText(wallet.transform, "Caption", GameLanguage.Pick("ORO","GOLD"), 4, 1, 52, 18, 16, Gold).alignment = TextAnchor.MiddleCenter;
             goldText = MakeText(wallet.transform, "Gold", "", 4, 12, 52, 34, 32, Gold);
             goldText.alignment = TextAnchor.MiddleCenter;
-            MakeText(canvas.transform, "Wager Label", "APUESTA", 20, 298, 124, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
+            MakeText(canvas.transform, "Wager Label", GameLanguage.Pick("APUESTA","BET"), 20, 298, 124, 18, 16, CasinoUiSkin.Paper).alignment = TextAnchor.MiddleCenter;
             minusButton = MakeButton(canvas.transform, "Less Bet", "-", 20, 318, 28, 26, ()=>ChangeWager(-1));
             wagerText = MakeText(canvas.transform, "Wager", "10", 52, 318, 60, 26, 16, CasinoUiSkin.Paper);
             wagerText.alignment = TextAnchor.MiddleCenter;
@@ -530,16 +532,16 @@ namespace DoubleDown.Presentation
             gainText = MakeText(canvas.transform, "Score Gain", "", 180, 186, 88, 32, 16, Color.clear);
 
             var side = MakePanel(canvas.transform, "Action Panel", 176, 308, 448, 40, Color.clear);
-            hitButton = MakeButton(side.transform, "Hit", "PEDIR", 4, 0, 100, 34, ()=>session.Hit(), true);
-            standButton = MakeButton(side.transform, "Stand", "PLANTARSE", 116, 0, 100, 34, ()=>session.Stand());
-            doubleButton = MakeButton(side.transform, "Double", "DOBLAR", 228, 0, 100, 34, ()=>session.DoubleDown());
-            splitButton = MakeButton(side.transform, "Split", "DIVIDIR", 340, 0, 100, 34, ()=>session.Split());
-            dealButton = MakeButton(side.transform, "Deal", "REPARTIR", 116, 0, 212, 34, TryDeal, true);
-            insuranceButton = MakeButton(side.transform, "Insurance", "SEGURO", 4, 0, 212, 34, ()=>session.ChooseInsurance(true));
-            declineButton = MakeButton(side.transform, "No Insurance", "PASAR", 228, 0, 212, 34, ()=>session.ChooseInsurance(false));
-            dealerText = MakeText(canvas.transform, "Dealer Total", "BANCA", 180, 128, 88, 54, 16, Cyan);
+            hitButton = MakeButton(side.transform, "Hit", GameLanguage.Pick("PEDIR","HIT"), 4, 0, 100, 34, ()=>session.Hit(), true);
+            standButton = MakeButton(side.transform, "Stand", GameLanguage.Pick("PLANTARSE","STAND"), 116, 0, 100, 34, ()=>session.Stand());
+            doubleButton = MakeButton(side.transform, "Double", GameLanguage.Pick("DOBLAR","DOUBLE"), 228, 0, 100, 34, ()=>session.DoubleDown());
+            splitButton = MakeButton(side.transform, "Split", GameLanguage.Pick("DIVIDIR","SPLIT"), 340, 0, 100, 34, ()=>session.Split());
+            dealButton = MakeButton(side.transform, "Deal", GameLanguage.Pick("REPARTIR","DEAL"), 116, 0, 212, 34, TryDeal, true);
+            insuranceButton = MakeButton(side.transform, "Insurance", GameLanguage.Pick("SEGURO","INSURANCE"), 4, 0, 212, 34, ()=>session.ChooseInsurance(true));
+            declineButton = MakeButton(side.transform, "No Insurance", GameLanguage.Pick("PASAR","DECLINE"), 228, 0, 212, 34, ()=>session.ChooseInsurance(false));
+            dealerText = MakeText(canvas.transform, "Dealer Total", GameLanguage.Pick("BANCA","DEALER"), 180, 128, 88, 54, 16, Cyan);
             bossText = MakeText(canvas.transform, "Boss Rule", "", 180, 90, 88, 34, 12, Gold);
-            playerText = MakeText(canvas.transform, "Player Total", "TU MANO", 180, 222, 88, 70, 16, Gold);
+            playerText = MakeText(canvas.transform, "Player Total", GameLanguage.Pick("TU MANO","YOUR HAND"), 180, 222, 88, 70, 16, Gold);
             MakeStripe(canvas.transform, "Dealer Divider", 180, 192, 436, 1, new Color(0.2f,0.4f,0.44f,0.4f));
             relicRack = gameObject.AddComponent<RelicRack>();
             relicRack.Initialize(canvas, fontAsset, () => session.Phase == BlackjackPhase.Ready || session.Phase == BlackjackPhase.Settled);

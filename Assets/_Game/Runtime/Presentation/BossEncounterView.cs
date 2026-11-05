@@ -50,7 +50,7 @@ namespace DoubleDown.Presentation
             // Label follows the button so the one-pixel press remains coherent.
             label.transform.SetParent(go.transform, false);
             Rect(label.rectTransform, 2, 0, 412, 32);
-            label.text = "JUGAR";
+            label.text = GameLanguage.Pick("JUGAR","PLAY");
             go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), null,
                 GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
             root.AddComponent<PanelMotion>();
@@ -62,10 +62,10 @@ namespace DoubleDown.Presentation
             pendingRound = round;
             openedFrame = Time.frameCount;
             enter = onEnter;
-            heading.text = $"RONDA JEFE / MESA {round / 3:00}";
+            heading.text = $"{GameLanguage.Pick("RONDA JEFE / MESA","BOSS ROUND / TABLE")} {round / 3:00}";
             title.text = boss.Name;
-            rule.text = boss.Description;
-            stakes.text = $"META {goal}   /   {hands} MANOS";
+            rule.text = GameLanguage.BossEffect(boss);
+            stakes.text = $"{GameLanguage.Pick("META","TARGET")} {goal}   /   {hands} {GameLanguage.Pick("MANOS","HANDS")}";
             root.SetActive(true);
             root.transform.SetAsLastSibling();
         }

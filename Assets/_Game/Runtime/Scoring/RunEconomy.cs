@@ -54,6 +54,11 @@ namespace DoubleDown.Scoring
             (AdditionalOffersAvailable || catalog.Exists(id => !owned.Contains(id)));
         public IReadOnlyList<string> Offers => offers;
         public bool Owns(string id) => owned.Contains(id);
+        public bool ClaimStarter(string id)
+        {
+            if (RewardedRound != 0 || owned.Count != 0 || !catalog.Contains(id)) return false;
+            return owned.Add(id);
+        }
         public RunEconomy(IEnumerable<string> ids, int seed, EconomyRules? rules = null)
         {
             catalog = new List<string>(new HashSet<string>(ids));
@@ -65,7 +70,7 @@ namespace DoubleDown.Scoring
         public void Reset()
         {
             random = new Random(seed);
-            owned.Clear(); foreach(var id in new[]{"00","01","08","14"}) owned.Add(id);
+            owned.Clear();
             RelicDiscount = RerollDiscount = BonusReward = InterestCap = 0;
             Gold = rules.StartingGold;
             RewardedRound = 0;

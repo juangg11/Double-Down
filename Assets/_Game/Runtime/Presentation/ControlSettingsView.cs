@@ -28,8 +28,8 @@ namespace DoubleDown.Presentation
                 var y = 52 + (i % 6) * 34;
                 Label(body.transform, "Action " + action, ControlBindings.Name(action), x, y, 176, 32, 16);
                 var button = Button(body.transform, "Bind " + action, "", x + 180, y, 76, 32, () => controls.BeginCapture(action));
-                var icon = Panel(button.transform, "Key", 6, 0, 64, 32, Color.white).GetComponent<Image>();
-                icon.preserveAspect = true; icon.raycastTarget = false;
+                var icon = button.GetComponent<Image>();
+                icon.preserveAspect = true;
                 icons[i] = icon; caps[i] = icon.gameObject.AddComponent<KeycapHint>();
                 fallback[i] = Label(button.transform, "Key Name", "", 2, 0, 72, 32, 16);
                 fallback[i].alignment = TextAnchor.MiddleCenter;
@@ -44,10 +44,28 @@ namespace DoubleDown.Presentation
         }
         public void Show() { root.SetActive(true); root.transform.SetAsLastSibling(); Refresh(); }
         public void Hide() { if (controls.Capturing.HasValue) controls.CancelCapture(); root.SetActive(false); }
+        public void RefreshLanguage()
+        {
+            if(root==null)return;
+            var body=root.transform.Find("Body");
+            body.Find("Heading").GetComponent<Text>().text=GameLanguage.Pick("CONTROLES","CONTROLS");
+            body.Find("Defaults/Label").GetComponent<Text>().text=GameLanguage.Pick("RESTABLECER","RESET DEFAULTS");
+            body.Find("Back/Label").GetComponent<Text>().text=GameLanguage.Pick("VOLVER","BACK");
+            foreach(var action in ControlBindings.Actions)
+                body.Find("Action "+action).GetComponent<Text>().text=GameLanguage.English ? EnglishName(action) : ControlBindings.Name(action);
+            Refresh();
+        }
+        private static string EnglishName(TableAction action) => action switch
+        {
+            TableAction.Confirm=>"DEAL / CONTINUE", TableAction.Hit=>"HIT", TableAction.Stand=>"STAND",
+            TableAction.Double=>"DOUBLE", TableAction.Split=>"SPLIT", TableAction.Insurance=>"TAKE INSURANCE",
+            TableAction.DeclineInsurance=>"DECLINE INSURANCE", TableAction.Relics=>"RELICS", TableAction.Restart=>"RETRY",
+            TableAction.LessBet=>"LOWER BET", TableAction.MoreBet=>"RAISE BET", _=>""
+        };
         private void OnDestroy() { if (controls != null) controls.Changed -= Refresh; }
         private void Refresh()
         {
-            status.text = controls.Capturing.HasValue ? "PULSA UNA TECLA / ESC CANCELA" : "TECLA REPETIDA: SE INTERCAMBIAN LAS ACCIONES";
+            status.text = controls.Capturing.HasValue ? GameLanguage.Pick("PULSA UNA TECLA / ESC CANCELA","PRESS A KEY / ESC CANCELS") : GameLanguage.Pick("TECLA REPETIDA: SE INTERCAMBIAN LAS ACCIONES","DUPLICATE KEY: ACTIONS ARE SWAPPED");
             for (var i = 0; i < ControlBindings.Actions.Length; i++)
             {
                 var action = ControlBindings.Actions[i]; var key = controls.Bindings[action];
@@ -55,7 +73,7 @@ namespace DoubleDown.Presentation
                 fallback[i].text = sprite == null ? KeyName(key) : "";
                 sprite = sprite != null ? sprite : Resources.Load<Sprite>("TablePresentation/Keys/BlankLg");
                 caps[i].Initialize(icons[i], sprite, key);
-                if (controls.Capturing == action) fallback[i].text = "...";
+                icons[i].color = controls.Capturing == action ? new Color(0.45f,0.48f,0.49f) : Color.white;
             }
         }
         private static string GlyphName(Key key) => key switch
@@ -84,10 +102,12 @@ namespace DoubleDown.Presentation
         }
         private Button Button(Transform parent, string name, string value, float x, float y, float w, float h, UnityEngine.Events.UnityAction action)
         {
-            var go = Panel(parent, name, x, y, w, h, CasinoUiSkin.Felt); CasinoUiSkin.Surface(go.GetComponent<Image>(), "Button", CasinoUiSkin.Felt);
+            var keycap = name.StartsWith("Bind ");
+            var go = Panel(parent, name, x, y, w, h, keycap ? Color.white : CasinoUiSkin.Felt);
+            if(!keycap) CasinoUiSkin.Surface(go.GetComponent<Image>(), "Button", CasinoUiSkin.Felt);
             go.AddComponent<CanvasGroup>(); var button = go.AddComponent<Button>(); button.targetGraphic = go.GetComponent<Image>(); button.transition = Selectable.Transition.None;
             button.onClick.AddListener(action); var text = Label(go.transform, "Label", value, 2, 0, w - 4, h, 16); text.alignment = TextAnchor.MiddleCenter;
-            go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), null, GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
+            if(!keycap) go.AddComponent<ArcadeButtonFeel>().Initialize(go.GetComponent<Image>(), null, GetComponent<AudioSource>(), Resources.Load<AudioClip>("TablePresentation/Audio/click3"));
             return button;
         }
     }

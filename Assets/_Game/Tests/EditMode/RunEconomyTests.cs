@@ -52,7 +52,7 @@ namespace DoubleDown.Tests
         [Test]
         public void ExhaustedCatalogCannotChargeRerollsAndResetRestoresSeededOffers()
         {
-            var shop = new RunEconomy(new[] { "00", "01", "08", "14", "02", "02" }, 9);
+            var shop = new RunEconomy(new[] { "02", "02" }, 9);
             shop.Open(1);
             CollectionAssert.AreEqual(new[] { "02", null, null }, shop.Offers);
             Assert.IsTrue(shop.Buy(0));
@@ -66,6 +66,20 @@ namespace DoubleDown.Tests
             Assert.IsTrue(shop.Offers.All(id => id == null));
             shop.Open(1);
             CollectionAssert.AreEqual(new[] { "02", null, null }, shop.Offers);
+        }
+
+        [Test]
+        public void StarterRelicIsFreeUniqueAndResetsWithRun()
+        {
+            var shop=new RunEconomy(new[]{"00","01","02"},9);
+            Assert.IsFalse(shop.Owns("00"));
+            Assert.IsTrue(shop.ClaimStarter("01"));
+            Assert.IsTrue(shop.Owns("01"));
+            Assert.AreEqual(8,shop.Gold);
+            Assert.IsFalse(shop.ClaimStarter("02"));
+            shop.Reset();
+            Assert.IsFalse(shop.Owns("01"));
+            Assert.IsTrue(shop.ClaimStarter("02"));
         }
 
         [Test]

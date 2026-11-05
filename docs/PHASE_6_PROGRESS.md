@@ -4,7 +4,7 @@ La Fase 6 incorpora tienda, renovaciones, consumibles, vales, edición de mazo, 
 
 ## Funcionamiento
 
-- La tienda se abre al superar una meta. Tres pestañas separan reliquias, consumibles y vales. Cada oferta tiene detalle completo. Renovar cambia las tres pestañas y aumenta su coste; no repite reliquias o vales adquiridos. Los consumibles pueden volver a aparecer.
+- La tienda se abre al superar una meta. Tres pestañas separan reliquias, consumibles y vales. El efecto se lee en cada oferta. Renovar cambia las tres pestañas y aumenta su coste; no repite reliquias o vales adquiridos. Los consumibles pueden volver a aparecer. Las reliquias compradas ocupan automáticamente el primer hueco libre; con todos los huecos ocupados, la compra queda desactivada.
 - El oro es independiente de las fichas de blackjack. Los vales modifican precios, interés, recompensa de ronda y recuperación de fichas. Los requisitos de vales se comprueban antes de cobrar. La recompensa solo se concede una vez por ronda.
 - **Mazo** muestra 18 cartas por página, permite seleccionar una carta y confirmar el uso de un consumible entre manos. Una operación inválida no gasta el objeto. Se puede tirar un consumible entre manos. Cada copia tiene identidad independiente y conserva sus capas al duplicarse.
 - Edición, mejora y sello son independientes; cambiar una capa mantiene las otras. Sus bonos se aplican antes de las reliquias y solo en manos que puntúan. Eco repite los bonos de edición y mejora una vez. La banca usa el mismo mazo, sin recibir los bonos de sus cartas.
@@ -21,12 +21,12 @@ Se amplió el núcleo anterior para distinguir copias de cartas; la igualdad inc
 
 ## Cómo probar
 
-1. Abrir MainMenu y empezar una run. Pedir, plantarse, doblar y dividir cuando sean válidos; seguro al mostrar as la banca.
-2. Superar una meta, comprar en cada pestaña y comprobar oro, capacidad y oferta agotada. Abrir Detalle para leer efectos completos.
+1. Abrir MainMenu, elegir una de tres reliquias iniciales y empezar una run. Pedir, plantarse, doblar y dividir cuando sean válidos; seguro al mostrar as la banca.
+2. Superar una meta, comprar en cada pestaña y comprobar oro, capacidad y oferta agotada. Verificar equipamiento automático y compra desactivada cuando no quedan huecos.
 3. Abrir Mazo, elegir carta, elegir consumible y Aplicar. Confirmar que solo desaparece el objeto usado y que la carta conserva las capas anteriores. Pasar página y volver a la mesa.
-4. Equipar una reliquia comprada y arrastrar dos huecos para intercambiarlos. Durante una mano, comprobar que no permite modificar la build.
+4. Arrastrar dos reliquias para intercambiarlas. Durante una mano, comprobar que no permite modificar la build.
 5. Llegar a ronda 3, leer el jefe y comprobar su regla; continuar hasta ronda 4 para comprobar su retirada.
-6. Perder, revisar el resumen y reintentar. Verificar oro, mazo de 52 cartas y cuatro reliquias iniciales.
+6. Perder, revisar el resumen y reintentar. Verificar oro, mazo de 52 cartas y una nueva selección entre tres reliquias, con los huecos inicialmente vacíos.
 
 ## Calidad y límites de esta entrega
 

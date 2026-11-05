@@ -11,7 +11,7 @@ namespace DoubleDown.Presentation
     {
         public RelicLoadout Loadout { get; } = new RelicLoadout();
         public Func<string,bool> Owns { get; set; } = _ => true;
-        public bool IsOpen => modal != null && modal.activeSelf;
+        public bool IsOpen => (modal != null && modal.activeSelf) || (starter != null && starter.activeSelf);
         private readonly Text[] labels = new Text[6];
         private readonly Image[] icons = new Image[6];
         private readonly Queue<int> activations = new Queue<int>();
@@ -19,6 +19,8 @@ namespace DoubleDown.Presentation
         private RelicDefinition candidate;
         private Font font;
         private GameObject modal;
+        private GameObject starter;
+        private RunEconomy economy;
         private Text details;
         private Text slotText;
         private Func<bool> canEdit;
@@ -35,9 +37,7 @@ namespace DoubleDown.Presentation
             catalog = Resources.LoadAll<RelicDefinition>("Relics");
             Array.Sort(catalog, (a,b) => string.CompareOrdinal(a.id,b.id));
             if (catalog.Length < 15) throw new InvalidOperationException("Build the Phase 5 relic catalog first.");
-            var initial = new[] {0,1,8,14};
-            for (var i=0;i<4;i++) Loadout.Equip(i,catalog[initial[i]]);
-            Text(canvas.transform,"Relic Heading","RELIQUIAS",180,2,436,16);
+            Text(canvas.transform,"Relic Heading",GameLanguage.Pick("RELIQUIAS","RELICS"),180,2,436,16);
             for (var i=0;i<6;i++)
             {
                 var slot=i;
@@ -64,27 +64,62 @@ namespace DoubleDown.Presentation
                 choices.Add(choice.gameObject);
             }
             details=Text(body.transform,"Description","",12,176,548,42);
-            Button(body.transform,"Up","IZQUIERDA",12,232,88,30,()=>Move(-1));
-            Button(body.transform,"Down","DERECHA",108,232,88,30,()=>Move(1));
-            equip=Button(body.transform,"Equip","EQUIPAR",226,232,124,30,()=>
+            Button(body.transform,"Up",GameLanguage.Pick("IZQUIERDA","LEFT"),12,232,88,30,()=>Move(-1));
+            Button(body.transform,"Down",GameLanguage.Pick("DERECHA","RIGHT"),108,232,88,30,()=>Move(1));
+            equip=Button(body.transform,"Equip",GameLanguage.Pick("EQUIPAR","EQUIP"),226,232,124,30,()=>
             {
                 if(canEdit() && Owns(candidate.id) && Loadout.Equip(selected,candidate)) Refresh();
             });
-            Button(body.transform,"Close","VOLVER",380,232,176,30,Toggle);
+            Button(body.transform,"Close",GameLanguage.Pick("VOLVER","BACK"),380,232,176,30,Toggle);
             body.AddComponent<PanelMotion>();
             candidate=Loadout[0];
             modal.SetActive(false);
             Refresh();
+        }
+        public bool HasEmptySlot
+        {
+            get { for (var i=0;i<Loadout.SlotCount;i++) if(Loadout[i]==null) return true; return false; }
+        }
+        public bool EquipFirstFree(RelicDefinition relic)
+        {
+            if (relic==null) return false;
+            for (var i=0;i<Loadout.SlotCount;i++)
+                if(Loadout[i]==null && Loadout.Equip(i,relic)) { Refresh(); return true; }
+            return false;
+        }
+        public void ShowStarterChoice(RunEconomy runEconomy, int seed)
+        {
+            economy=runEconomy;
+            if(starter!=null) Destroy(starter);
+            starter=Panel(modal.transform.parent,"Starter Relics",0,0,640,360,new Color(0,0,0,0.88f));
+            var body=Panel(starter.transform,"Body",52,58,536,244,CasinoUiSkin.Ink);
+            CasinoUiSkin.Surface(body.GetComponent<Image>(),"Frame",CasinoUiSkin.Ink);
+            Text(body.transform,"Heading",GameLanguage.Pick("ELIGE UNA RELIQUIA INICIAL","CHOOSE A STARTING RELIC"),18,12,500,34);
+            var random=new System.Random(seed ^ 0x3857);
+            var pool=new List<RelicDefinition>(catalog);
+            for(var i=0;i<3;i++)
+            {
+                var pick=random.Next(pool.Count);var relic=pool[pick];pool.RemoveAt(pick);
+                var x=18+i*170;
+                var icon=Panel(body.transform,"Starter Icon "+i,x+62,54,32,32,Color.white).GetComponent<Image>();
+                icon.sprite=relic.icon;icon.preserveAspect=true;icon.raycastTarget=false;
+                Text(body.transform,"Starter Name "+i,relic.displayName,x,94,160,42).alignment=TextAnchor.MiddleCenter;
+                Text(body.transform,"Starter Effect "+i,GameLanguage.RelicEffect(relic),x+4,132,152,54).alignment=TextAnchor.MiddleCenter;
+                Button(body.transform,"Choose "+i,GameLanguage.Pick("ELEGIR","CHOOSE"),x,194,160,30,()=>
+                {
+                    if(economy.ClaimStarter(relic.id) && EquipFirstFree(relic)) { starter.SetActive(false); Destroy(starter); starter=null; }
+                });
+            }
+            body.AddComponent<PanelMotion>();starter.transform.SetAsLastSibling();
         }
         private void Open(int slot) { selected=slot; candidate=Loadout[slot] ?? catalog[0]; page=Array.IndexOf(catalog,candidate)/15; modal.SetActive(true); modal.transform.SetAsLastSibling(); Refresh(); }
         public void ResetLoadout()
         {
             Loadout.SetCapacity(4); selected=0; page=0;
             for(var i=0;i<4;i++) Loadout.Equip(i,null);
-            var initial=new[]{0,1,8,14};for(var i=0;i<4;i++) Loadout.Equip(i,catalog[initial[i]]);
-            candidate=Loadout[selected];Refresh();
+            candidate=catalog[0];Refresh();
         }
-        public void Toggle() { if(IsOpen) modal.SetActive(false); else Open(selected); }
+        public void Toggle() { if(starter!=null && starter.activeSelf)return; if(modal.activeSelf) modal.SetActive(false); else Open(selected); }
         private void Move(int direction)
         {
             var next=selected+direction;
@@ -121,12 +156,12 @@ namespace DoubleDown.Presentation
                 if (i >= Loadout.SlotCount) continue;
                 var rect=slotButtons[i].GetComponent<RectTransform>(); rect.anchoredPosition=new Vector2(Mathf.Round(180+i*width),-20);rect.sizeDelta=new Vector2(Mathf.Floor(width)-8,64);
                 labels[i].rectTransform.sizeDelta=new Vector2(rect.sizeDelta.x-8,32);
-                labels[i].text=Loadout[i]?.displayName ?? "VACIO"; icons[i].sprite=Loadout[i]?.icon; icons[i].enabled=Loadout[i]!=null;
+                labels[i].text=Loadout[i]?.displayName ?? GameLanguage.Pick("VACIO","EMPTY"); icons[i].sprite=Loadout[i]?.icon; icons[i].enabled=Loadout[i]!=null;
                 icons[i].rectTransform.anchoredPosition=new Vector2(Mathf.Round((rect.sizeDelta.x-24)/2),-5);
             }
-            slotText.text=$"HUECO {selected+1}/{Loadout.SlotCount}  |  PAG {page+1}/{(catalog.Length+14)/15}";
-            details.text=candidate.displayName+": "+candidate.description+
-                (!Owns(candidate.id)?"\nNO ADQUIRIDA: DISPONIBLE EN LA TIENDA.":canEdit()?"":"\nTERMINA LA MANO PARA CAMBIAR RELIQUIAS.");
+            slotText.text=$"{GameLanguage.Pick("HUECO","SLOT")} {selected+1}/{Loadout.SlotCount}  |  {GameLanguage.Pick("PAG","PAGE")} {page+1}/{(catalog.Length+14)/15}";
+            details.text=candidate.displayName+": "+GameLanguage.RelicEffect(candidate)+
+                (!Owns(candidate.id)?GameLanguage.Pick("\nNO ADQUIRIDA: DISPONIBLE EN LA TIENDA.","\nNOT OWNED: AVAILABLE IN THE SHOP."):canEdit()?"":GameLanguage.Pick("\nTERMINA LA MANO PARA CAMBIAR RELIQUIAS.","\nFINISH THIS HAND TO CHANGE RELICS."));
             var duplicate=false;
             for(var i=0;i<Loadout.SlotCount;i++) if(i!=selected && Loadout[i]!=null && Loadout[i].id==candidate.id) duplicate=true;
             equip.interactable=canEdit()&&Owns(candidate.id)&&!duplicate;

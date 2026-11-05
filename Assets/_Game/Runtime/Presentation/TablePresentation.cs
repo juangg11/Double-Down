@@ -26,7 +26,7 @@ namespace DoubleDown.Presentation
             font = pixelFont;
             controls = GetComponent<TableControls>();
             background = backdrop;
-            crt = Mathf.Clamp01(PlayerPrefs.GetFloat("visual.crt", 0.25f));
+            crt = Mathf.Clamp01(PlayerPrefs.GetFloat("visual.crt.v2", 1f));
             flow = Mathf.Clamp01(PlayerPrefs.GetFloat("visual.flow", 0.55f));
             volume = Mathf.Clamp01(PlayerPrefs.GetFloat("audio.volume", 0.7f));
             EffectStrength = Mathf.Clamp01(PlayerPrefs.GetFloat("visual.effects", 0.7f));
@@ -66,6 +66,7 @@ namespace DoubleDown.Presentation
             if(showShortcut) Button(canvas.transform, "Open Settings", "AJUSTES", 548, 1, Toggle, 68, 18);
             drawer.SetActive(false);
             Apply();
+            RefreshLanguage();
         }
 
         private static float Step(float current) => current >= 0.99f ? 0f : Mathf.Min(1f, current + 0.25f);
@@ -82,14 +83,33 @@ namespace DoubleDown.Presentation
             if (controls.EscapePressed) Toggle();
         }
         public void Toggle() { if (drawer.activeSelf) controlMenu.Hide(); drawer.SetActive(!drawer.activeSelf); if (drawer.activeSelf) drawer.transform.SetAsLastSibling(); }
+        public void RefreshLanguage()
+        {
+            if(drawer==null)return;
+            var body=drawer.transform.Find("Settings Body");
+            body.Find("Heading").GetComponent<Text>().text=GameLanguage.Pick("AJUSTES","SETTINGS");
+            SetLabel(body,"Flow","FONDO +","FLOW +");
+            SetLabel(body,"Effects","EFECTOS +","EFFECTS +");
+            SetLabel(body,"Volume","VOLUMEN +","VOLUME +");
+            SetLabel(body,"Motion","MOVIMIENTO","MOTION");
+            SetLabel(body,"Controls","CONTROLES","CONTROLS");
+            SetLabel(body,"Display","VENTANA / COMPLETA","WINDOW / FULLSCREEN");
+            if(body.Find("Main Menu")!=null)SetLabel(body,"Main Menu","MENU PRINCIPAL","MAIN MENU");
+            SetLabel(body,"Close","VOLVER","BACK");
+            var shortcut=drawer.transform.parent.Find("Open Settings/Label");
+            if(shortcut!=null)shortcut.GetComponent<Text>().text=GameLanguage.Pick("AJUSTES","SETTINGS");
+            controlMenu.RefreshLanguage();Apply();
+        }
+        private static void SetLabel(Transform body,string name,string es,string en) =>
+            body.Find(name+"/Label").GetComponent<Text>().text=GameLanguage.Pick(es,en);
         private void Apply()
         {
             if (glass != null) glass.SetFloat("_Intensity", crt);
             if (background != null) background.SetFloat("_Speed", ReducedMotion ? 0f : flow);
             var audioSource = GetComponent<AudioSource>();
             if (audioSource != null) audioSource.volume = volume;
-            values.text = $"CRT {crt:P0}    FONDO {flow:P0}\nEFECTOS {EffectStrength:P0}    VOLUMEN {volume:P0}\nMOVIMIENTO: {(ReducedMotion ? "REDUCIDO" : "NORMAL")}";
-            PlayerPrefs.SetFloat("visual.crt", crt);
+            values.text = $"CRT {crt:P0}    {GameLanguage.Pick("FONDO","FLOW")} {flow:P0}\n{GameLanguage.Pick("EFECTOS","EFFECTS")} {EffectStrength:P0}    {GameLanguage.Pick("VOLUMEN","VOLUME")} {volume:P0}\n{GameLanguage.Pick("MOVIMIENTO","MOTION")}: {(ReducedMotion ? GameLanguage.Pick("REDUCIDO","REDUCED") : GameLanguage.Pick("NORMAL","NORMAL"))}";
+            PlayerPrefs.SetFloat("visual.crt.v2", crt);
             PlayerPrefs.SetFloat("visual.flow", flow);
             PlayerPrefs.SetFloat("visual.effects", EffectStrength);
             PlayerPrefs.SetFloat("audio.volume", volume);
